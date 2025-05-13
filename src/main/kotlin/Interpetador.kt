@@ -23,6 +23,7 @@ sealed class Valor {
     }
 }
 
+
 class Ambiente(val enclosing: Ambiente? = null) {
     private val valores = mutableMapOf<String, Valor>()
     private val classes = mutableMapOf<String, DeclaracaoClasseContext>()
@@ -100,8 +101,6 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
                 }
             }
 
-
-
             tree.declaracao().forEach { visit(it) }
 
 
@@ -128,7 +127,31 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
 
     override fun visitDeclaracaoVar(ctx: DeclaracaoVarContext): Valor {
         val nome = ctx.ID().text
+        val tipo = ctx.tipo()?.text;
         val valor = ctx.expressao()?.let { visit(it) } ?: Valor.Nulo
+
+        if (tipo != null) {
+            if (valor is Valor.Objeto) {
+                val nomeClasse = valor.klass
+                if (tipo != nomeClasse) {
+                    throw RuntimeException("Tipo de variável '$nome' não corresponde ao tipo do objeto '$nomeClasse'")
+                }
+            } else {
+                val basicType = when (valor) {
+                    is Valor.Inteiro -> "Inteiro"
+                    is Valor.Real -> "Real"
+                    is Valor.Texto -> "Texto"
+                    is Valor.Logico -> "Logico"
+                    is Valor.Nulo -> "Nulo"
+                    else -> null
+                }
+
+                if (basicType != tipo) {
+                    throw RuntimeException("Tipo de variável '$nome' não corresponde ao tipo esperado '$tipo'")
+                }
+            }
+        }
+
         ambiente.definir(nome, valor)
         return Valor.Nulo
     }

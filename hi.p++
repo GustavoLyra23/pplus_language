@@ -1,0 +1,8 @@
+classe Gustavo {
+}
+
+var data: Joao = nova Gustavo();
+escrever("Olá, mundo!");
+
+
+
