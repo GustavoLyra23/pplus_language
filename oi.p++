@@ -1,0 +1,5 @@
+var i: Inteiro = 0;
+enquanto (i < 5) {
+    escrever(i);
+    i = i + 1;
+}

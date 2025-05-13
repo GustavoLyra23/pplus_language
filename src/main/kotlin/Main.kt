@@ -5,16 +5,7 @@ import java.nio.file.Files
 import java.nio.file.Paths
 
 fun main() {
-    val codigo = """
-        classe Principal {
-            funcao inicio() {
-                numero = 10;
-                imprimir(numero);
-            }
-        }
-        imprimir("Olá, Mundo!");
-    """.trimIndent()
-    val fileData = Files.readString(Paths.get("C:\\Users\\gusta\\IdeaProjects\\p_mais_mais\\hi.p++"))
+    val fileData = Files.readString(Paths.get("C:\\Users\\gusta\\IdeaProjects\\p_mais_mais\\oi.p++"))
     executarPortugolPP(fileData)
 }
 

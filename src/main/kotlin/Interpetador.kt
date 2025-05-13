@@ -2,6 +2,8 @@ package org.gustavolyra.portugolpp
 
 import org.gustavolyra.portugolpp.PortugolPPParser.*
 
+class BreakException : RuntimeException()
+class ContinueException : RuntimeException()
 sealed class Valor {
     data class Inteiro(val valor: Int) : Valor()
     data class Real(val valor: Double) : Valor()
@@ -38,7 +40,6 @@ class Ambiente(val enclosing: Ambiente? = null) {
 
         val valor = valores[nome]
         if (valor != null) {
-
             return valor
         }
 
@@ -479,6 +480,162 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
         }
         return visit(ctx.getChild(0))
     }
+
+    override fun visitChamada(ctx: ChamadaContext): Valor {
+        var resultado = visit(ctx.primario())
+        var i = 1;
+
+        while (i < ctx.childCount) {
+            if (ctx.getChild(i).text == ".") {
+                val id = ctx.getChild(i + 1).text
+
+                if (resultado !is Valor.Objeto) {
+                    throw RuntimeException("Não é possível acessar propriedades de um não-objeto: $resultado")
+                }
+
+                if (i + 2 < ctx.childCount && ctx.getChild(i + 2).text == "(") {
+
+                    val args = mutableListOf<Valor>()
+
+                    if (i + 3 < ctx.childCount && ctx.getChild(i + 3) is ArgumentosContext) {
+                        val argsCtx = ctx.getChild(i + 3) as ArgumentosContext
+                        args.addAll(argsCtx.expressao().map { visit(it) })
+                        i += 5
+                    } else {
+                        i += 4
+                    }
+
+                    val classe = global.obterClasse(resultado.klass)
+                        ?: throw RuntimeException("Classe não encontrada: ${resultado.klass}")
+
+                    val metodo = classe.declaracaoFuncao().find { it.ID().text == id }
+                        ?: throw RuntimeException("Método não encontrado: $id em classe ${resultado.klass}")
+
+                    resultado = executarMetodo(resultado, metodo, args)
+                } else {
+                    val campoValor = resultado.campos[id]
+                    resultado = campoValor ?: Valor.Nulo
+                    i += 2
+                }
+            } else {
+                i++
+            }
+        }
+
+        return resultado
+    }
+
+    override fun visitDeclaracaoPara(ctx: DeclaracaoParaContext): Valor {
+        // Executa a inicialização
+        if (ctx.declaracaoVar() != null) {
+            visit(ctx.declaracaoVar())
+        } else if (ctx.expressao(0) != null) {
+            visit(ctx.expressao(0))
+        }
+
+        while (true) {
+            // Avalia a condição
+            val condicao = visit(ctx.expressao(1))
+
+            // Verifica se a condição é um valor lógico
+            if (condicao !is Valor.Logico) {
+                throw RuntimeException("Condição do 'para' deve ser um valor lógico")
+            }
+
+            // Se a condição for falsa, sai do loop
+            if (!condicao.valor) {
+                break
+            }
+
+            // Executa o corpo do loop
+            try {
+                visit(ctx.declaracao())
+            } catch (e: RetornoException) {
+                // Propaga exceções de return
+                throw e
+            } catch (e: BreakException) {
+                break
+            } catch (e: ContinueException) {
+                continue
+            }
+
+            // Executa o incremento
+            visit(ctx.expressao(2))
+        }
+
+        return Valor.Nulo
+    }
+
+
+    override fun visitDeclaracaoFacaEnquanto(ctx: DeclaracaoFacaEnquantoContext): Valor {
+        var continueExec = true;
+        do {
+            // Executa o corpo do loop
+            try {
+                visit(ctx.declaracao())
+            } catch (e: RetornoException) {
+                // Propaga exceções de return
+                throw e
+            } catch (e: BreakException) {
+                break
+            } catch (e: ContinueException) {
+                continue
+            }
+
+            // Avalia a condição
+            val condicao = visit(ctx.expressao())
+
+            // Verifica se a condição é um valor lógico
+            if (condicao !is Valor.Logico) {
+                throw RuntimeException("Condição do 'enquanto' deve ser um valor lógico")
+            }
+            continueExec = condicao.valor
+            // Continua se a condição for verdadeira
+        } while (continueExec)
+
+        return Valor.Nulo
+    }
+
+    override fun visitDeclaracaoQuebra(ctx: DeclaracaoQuebraContext): Valor {
+        throw BreakException()
+    }
+
+    override fun visitDeclaracaoContinue(ctx: DeclaracaoContinueContext): Valor {
+        throw ContinueException()
+    }
+
+
+    override fun visitDeclaracaoEnquanto(ctx: DeclaracaoEnquantoContext): Valor {
+        while (true) {
+            // Avalia a condição
+            val condicao = visit(ctx.expressao())
+
+            // Verifica se a condição é um valor lógico
+            if (condicao !is Valor.Logico) {
+                throw RuntimeException("Condição do 'enquanto' deve ser um valor lógico")
+            }
+
+            // Se a condição for falsa, sai do loop
+            if (!condicao.valor) {
+                break
+            }
+
+            // Executa o corpo do loop
+            try {
+                visit(ctx.declaracao())
+            } catch (e: RetornoException) {
+                // Propaga exceções de return
+                throw e
+            } catch (e: BreakException) {
+                break
+            } catch (e: ContinueException) {
+                continue
+            }
+        }
+
+        return Valor.Nulo
+    }
+
 
     override fun visitChamadaFuncao(ctx: ChamadaFuncaoContext): Valor {
         val argumentos = ctx.argumentos()?.expressao()?.map { visit(it) } ?: emptyList()

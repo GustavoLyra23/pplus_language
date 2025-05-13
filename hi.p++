@@ -1,8 +1,0 @@
-se (3 > 3) {
-  escrever("ajfjawf");
-} senao {
-  escrever(10);
-}
-
-
-

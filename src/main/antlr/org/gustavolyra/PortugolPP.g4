@@ -13,6 +13,32 @@ declaracao
     | bloco
     | expressao ';'
     | declaracaoReturn
+    | declaracaoEnquanto
+    | declaracaoPara
+    | declaracaoFacaEnquanto
+    | declaracaoQuebra
+    | declaracaoContinue
+    ;
+
+declaracaoQuebra
+    : 'break' ';'
+    ;
+
+declaracaoContinue
+    : 'continue' ';'
+    ;
+
+declaracaoFacaEnquanto
+    : 'faca' declaracao 'enquanto' '(' expressao ')' ';'
+    ;
+
+
+declaracaoPara
+    : 'para' '(' (declaracaoVar | expressao ';') expressao ';' expressao ')' declaracao
+    ;
+
+declaracaoEnquanto
+    : 'enquanto' '(' expressao ')' declaracao
     ;
 
 declaracaoSe
