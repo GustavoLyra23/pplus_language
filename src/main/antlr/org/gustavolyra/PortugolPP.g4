@@ -115,7 +115,7 @@ adicao
     ;
 
 multiplicacao
-    : unario (('*' | '/') unario)*
+    : unario (('*' | '/' | '%') unario)*
     ;
 
 unario

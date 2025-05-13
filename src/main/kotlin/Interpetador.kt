@@ -470,6 +470,34 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
                     else -> throw RuntimeException("Operador '/' não suportado para ${esquerda::class.simpleName} e ${direita::class.simpleName}")
                 }
 
+                "%" -> when {
+                    esquerda is Valor.Inteiro && direita is Valor.Inteiro -> {
+                        if (direita.valor == 0)
+                            throw RuntimeException("Módulo por zero")
+                        Valor.Inteiro(esquerda.valor % direita.valor)
+                    }
+
+                    esquerda is Valor.Real && direita is Valor.Real -> {
+                        if (direita.valor == 0.0)
+                            throw RuntimeException("Módulo por zero")
+                        Valor.Real(esquerda.valor % direita.valor)
+                    }
+
+                    esquerda is Valor.Inteiro && direita is Valor.Real -> {
+                        if (direita.valor == 0.0)
+                            throw RuntimeException("Módulo por zero")
+                        Valor.Real(esquerda.valor.toDouble() % direita.valor)
+                    }
+
+                    esquerda is Valor.Real && direita is Valor.Inteiro -> {
+                        if (direita.valor == 0)
+                            throw RuntimeException("Módulo por zero")
+                        Valor.Real(esquerda.valor % direita.valor.toDouble())
+                    }
+
+                    else -> throw RuntimeException("Operador '%' não suportado para ${esquerda::class.simpleName} e ${direita::class.simpleName}")
+                }
+
                 else -> throw RuntimeException("Operador desconhecido: $operador")
             }
         }

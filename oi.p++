@@ -9,4 +9,4 @@ classe Raffy {
 }
 
 var r: Raffy = nova Raffy();
-escrever(r);
+escrever("Resto divisao" + 10 % 3);
