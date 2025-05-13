@@ -166,7 +166,7 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
         throw RetornoException(ctx.expressao()?.let { visit(it) } ?: Valor.Nulo)
     }
 
-    override fun visitDeclaracaoIf(ctx: DeclaracaoIfContext): Valor {
+    override fun visitDeclaracaoSe(ctx: DeclaracaoSeContext): Valor {
         val condicao = visit(ctx.expressao())
         if (condicao !is Valor.Logico) throw RuntimeException("Condição do 'if' deve ser lógica")
         return if (condicao.valor) visit(ctx.declaracao(0)) else ctx.declaracao(1)?.let { visit(it) } ?: Valor.Nulo
@@ -507,11 +507,7 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
     private fun chamadaFuncao(nome: String, argumentos: List<Valor>): Valor {
         val funcao = try {
             val value = ambiente.obter(nome)
-            if (value is Valor.Funcao) {
-                value
-            } else {
-                throw RuntimeException("'$nome' não é uma função")
-            }
+            value as? Valor.Funcao ?: throw RuntimeException("'$nome' não é uma função")
         } catch (e: Exception) {
             throw RuntimeException("Função não encontrada: $nome", e)
         }

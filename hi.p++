@@ -1,8 +1,8 @@
-classe Gustavo {
+se (3 > 3) {
+  escrever("ajfjawf");
+} senao {
+  escrever(10);
 }
-
-var data: Joao = nova Gustavo();
-escrever("Olá, mundo!");
 
 
 

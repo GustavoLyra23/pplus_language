@@ -14,7 +14,7 @@ fun main() {
         }
         imprimir("Olá, Mundo!");
     """.trimIndent()
-    var fileData = Files.readString(Paths.get("C:\\Users\\gusta\\IdeaProjects\\p_mais_mais\\hi.p++"))
+    val fileData = Files.readString(Paths.get("C:\\Users\\gusta\\IdeaProjects\\p_mais_mais\\hi.p++"))
     executarPortugolPP(fileData)
 }
 
@@ -37,9 +37,7 @@ fun executarPortugolPP(codigo: String) {
                 e: RecognitionException?
             ) {
                 println("Erro de sintaxe na linha $line:$charPositionInLine - $msg")
-                if (e != null) {
-                    e.printStackTrace()
-                }
+                e?.printStackTrace()
             }
         })
 

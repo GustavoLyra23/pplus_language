@@ -8,15 +8,15 @@ declaracao
     : declaracaoClasse
     | declaracaoVar
     | declaracaoFuncao
-    | declaracaoIf
+    | declaracaoSe
     | chamadaFuncao ';'
     | bloco
     | expressao ';'
     | declaracaoReturn
     ;
 
-declaracaoIf
-    : 'if' '(' expressao ')' declaracao ('else' declaracao)?
+declaracaoSe
+    : 'se' '(' expressao ')' declaracao ('senao' declaracao)?
     ;
 
 declaracaoReturn
