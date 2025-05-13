@@ -2,92 +2,6 @@ package org.gustavolyra.portugolpp
 
 import org.gustavolyra.portugolpp.PortugolPPParser.*
 
-class BreakException : RuntimeException()
-class ContinueException : RuntimeException()
-sealed class Valor {
-    data class Inteiro(val valor: Int) : Valor()
-    data class Real(val valor: Double) : Valor()
-    data class Texto(val valor: String) : Valor()
-    data class Logico(val valor: Boolean) : Valor()
-    data class Objeto(val klass: String, val campos: MutableMap<String, Valor>) : Valor()
-    data class Funcao(val nome: String, val declaracao: DeclaracaoFuncaoContext? = null, val metodoCallback: ((List<Valor>) -> Valor)? = null) : Valor()
-
-    object Nulo : Valor()
-
-    override fun toString(): String = when (this) {
-        is Inteiro -> valor.toString()
-        is Real -> valor.toString()
-        is Texto -> valor
-        is Logico -> if (valor) "verdadeiro" else "falso"
-        is Objeto -> "[Objeto $klass]"
-        is Funcao -> "[função $nome]"
-        Nulo -> "nulo"
-    }
-}
-
-
-class Ambiente(val enclosing: Ambiente? = null) {
-    private val valores = mutableMapOf<String, Valor>()
-    private val classes = mutableMapOf<String, DeclaracaoClasseContext>()
-    var thisObjeto: Valor.Objeto? = null
-
-    fun definir(nome: String, valor: Valor) {
-        valores[nome] = valor
-    }
-
-    fun obter(nome: String): Valor {
-        if (nome == "this" && thisObjeto != null) return thisObjeto!!
-
-        val valor = valores[nome]
-        if (valor != null) {
-            return valor
-        }
-
-        if (thisObjeto != null) {
-            val campoValor = thisObjeto!!.campos[nome]
-            if (campoValor != null) {
-                return campoValor
-            }
-        }
-
-        if (classes.containsKey(nome)) {
-        }
-
-        val externoValor = enclosing?.obter(nome)
-        if (externoValor != Valor.Nulo) {
-            return externoValor as Valor
-        }
-        return Valor.Nulo
-    }
-
-    fun definirClasse(nome: String, declaracao: DeclaracaoClasseContext) {
-        classes[nome] = declaracao
-    }
-
-    fun obterClasse(nome: String): DeclaracaoClasseContext? {
-        return classes[nome] ?: enclosing?.obterClasse(nome)
-    }
-
-    fun getClassesRegistradas(): List<String> {
-        return classes.keys.toList()
-    }
-
-    fun atualizarOuDefinir(nome: String, valor: Valor) {
-        var ambienteAtual: Ambiente? = this
-        while (ambienteAtual != null) {
-            if (ambienteAtual.valores.containsKey(nome)) {
-                // Encontrou a variável, atualiza no escopo correto
-                ambienteAtual.valores[nome] = valor
-                return
-            }
-            ambienteAtual = ambienteAtual.enclosing
-        }
-        valores[nome] = valor
-    }
-}
-
-class RetornoException(val valor: Valor) : RuntimeException()
-
 
 @Suppress("REDUNDANT_OVERRIDE", "ABSTRACT_MEMBER_NOT_IMPLEMENTED")
 class Interpretador : PortugolPPBaseVisitor<Valor>() {
@@ -116,7 +30,6 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
             }
 
             tree.declaracao().forEach { visit(it) }
-
 
             try {
                 val main = global.obter("main")
@@ -472,26 +385,22 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
 
                 "%" -> when {
                     esquerda is Valor.Inteiro && direita is Valor.Inteiro -> {
-                        if (direita.valor == 0)
-                            throw RuntimeException("Módulo por zero")
+                        if (direita.valor == 0) throw RuntimeException("Módulo por zero")
                         Valor.Inteiro(esquerda.valor % direita.valor)
                     }
 
                     esquerda is Valor.Real && direita is Valor.Real -> {
-                        if (direita.valor == 0.0)
-                            throw RuntimeException("Módulo por zero")
+                        if (direita.valor == 0.0) throw RuntimeException("Módulo por zero")
                         Valor.Real(esquerda.valor % direita.valor)
                     }
 
                     esquerda is Valor.Inteiro && direita is Valor.Real -> {
-                        if (direita.valor == 0.0)
-                            throw RuntimeException("Módulo por zero")
+                        if (direita.valor == 0.0) throw RuntimeException("Módulo por zero")
                         Valor.Real(esquerda.valor.toDouble() % direita.valor)
                     }
 
                     esquerda is Valor.Real && direita is Valor.Inteiro -> {
-                        if (direita.valor == 0)
-                            throw RuntimeException("Módulo por zero")
+                        if (direita.valor == 0) throw RuntimeException("Módulo por zero")
                         Valor.Real(esquerda.valor % direita.valor.toDouble())
                     }
 
@@ -546,11 +455,9 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
                         i += 4
                     }
 
-                    val classe = global.obterClasse(resultado.klass)
-                        ?: throw RuntimeException("Classe não encontrada: ${resultado.klass}")
+                    val classe = global.obterClasse(resultado.klass) ?: throw RuntimeException("Classe não encontrada: ${resultado.klass}")
 
-                    val metodo = classe.declaracaoFuncao().find { it.ID().text == id }
-                        ?: throw RuntimeException("Método não encontrado: $id em classe ${resultado.klass}")
+                    val metodo = classe.declaracaoFuncao().find { it.ID().text == id } ?: throw RuntimeException("Método não encontrado: $id em classe ${resultado.klass}")
 
                     resultado = executarMetodo(resultado, metodo, args)
                 } else {
@@ -609,10 +516,9 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
 
 
     override fun visitDeclaracaoFacaEnquanto(ctx: DeclaracaoFacaEnquantoContext): Valor {
-        var continueExec = true;
         do {
-            // Executa o corpo do loop
             try {
+                // Executa o corpo do loop
                 visit(ctx.declaracao())
             } catch (e: RetornoException) {
                 // Propaga exceções de return
@@ -620,19 +526,30 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
             } catch (e: BreakException) {
                 break
             } catch (e: ContinueException) {
+                val condicao = visit(ctx.expressao())
+                if (condicao !is Valor.Logico) {
+                    throw RuntimeException("Condição do 'enquanto' deve ser um valor lógico")
+                }
+                if (!condicao.valor) {
+                    break;
+                }
+                visit(ctx.declaracao())
                 continue
             }
 
-            // Avalia a condição
+            // Avalia a condição - sempre executado após o corpo do loop, mesmo após um continue
             val condicao = visit(ctx.expressao())
 
             // Verifica se a condição é um valor lógico
             if (condicao !is Valor.Logico) {
                 throw RuntimeException("Condição do 'enquanto' deve ser um valor lógico")
             }
-            continueExec = condicao.valor
-            // Continua se a condição for verdadeira
-        } while (continueExec)
+
+            // Sai do loop se a condição for falsa
+            if (!condicao.valor) {
+                break
+            }
+        } while (true)  // Loop infinito controlado pelas condições internas
 
         return Valor.Nulo
     }
@@ -647,29 +564,25 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
 
 
     override fun visitDeclaracaoEnquanto(ctx: DeclaracaoEnquantoContext): Valor {
-        // Vamos usar um contador para evitar loops infinitos durante a depuração
         var iteracoes = 0
-        val maxIteracoes = 100 // Limite de segurança
+        val maxIteracoes = 100
 
         while (iteracoes < maxIteracoes) {
-            // Avalia a condição
             val condicao = visit(ctx.expressao())
             println("Condição do loop: $condicao")
 
-            // Verifica se a condição é um valor lógico
             if (condicao !is Valor.Logico) {
                 throw RuntimeException("Condição do 'enquanto' deve ser um valor lógico")
             }
 
-            // Se a condição for falsa, sai do loop
             if (!condicao.valor) {
                 println("Condição falsa, saindo do loop")
                 break
             }
 
+            iteracoes++
             println("Iteração $iteracoes do loop")
 
-            // Executa o corpo do loop
             try {
                 visit(ctx.declaracao())
             } catch (e: RetornoException) {
@@ -679,12 +592,11 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
             } catch (e: ContinueException) {
                 continue
             }
-
-            iteracoes++
         }
 
         if (iteracoes >= maxIteracoes) {
-            println("Aviso: Loop possivelmente infinito detectado!")
+            println("Aviso: Loop infinito detectado! Saindo do loop.")
+            return Valor.Nulo
         }
 
         return Valor.Nulo
@@ -708,9 +620,7 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
 
             executarMetodo(objeto, metodo, argumentos)
         } else {
-            // Chamada de função global
             val funcaoNome = ctx.ID().text
-
             chamadaFuncao(funcaoNome, argumentos)
         }
     }
@@ -852,19 +762,5 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
         }
 
         return objeto
-    }
-
-    private fun dumpClassesRegistradas(): String {
-        val classes = mutableListOf<String>()
-        var env: Ambiente? = ambiente
-        while (env != null) {
-            classes.addAll(env.getClassesRegistradas())
-            env = env.enclosing
-        }
-        return classes.joinToString(", ")
-    }
-
-    private fun instanciarObjeto(ctx: PrimarioContext): Valor {
-        throw RuntimeException("Método 'instanciarObjeto' está depreciado, use 'criarObjetoClasse'")
     }
 }

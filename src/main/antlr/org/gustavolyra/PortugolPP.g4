@@ -21,7 +21,7 @@ declaracao
     ;
 
 declaracaoQuebra
-    : 'break' ';'
+    : 'quebra' ';'
     ;
 
 declaracaoContinue

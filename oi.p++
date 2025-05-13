@@ -1,12 +1,9 @@
 var j: Inteiro = 0;
 
-faca {
+faca  {
+      j = j + 1;
+      se (j == 6) {
+            continue;
+       }
     escrever(j);
-    j = j + 1;
 } enquanto (j < 10);
-
-classe Raffy {
-}
-
-var r: Raffy = nova Raffy();
-escrever("Resto divisao" + 10 % 3);
