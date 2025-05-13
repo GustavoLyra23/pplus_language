@@ -42,7 +42,6 @@ fun executarPortugolPP(codigo: String) {
         println("Executando interpretador...")
         val interpretador = Interpretador()
         interpretador.interpretar(tree)
-
         println("Terminando execucao!")
     } catch (e: Exception) {
         println("Erro ao executar o programa: ${e.message}")

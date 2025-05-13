@@ -71,6 +71,19 @@ class Ambiente(val enclosing: Ambiente? = null) {
     fun getClassesRegistradas(): List<String> {
         return classes.keys.toList()
     }
+
+    fun atualizarOuDefinir(nome: String, valor: Valor) {
+        var ambienteAtual: Ambiente? = this
+        while (ambienteAtual != null) {
+            if (ambienteAtual.valores.containsKey(nome)) {
+                // Encontrou a variável, atualiza no escopo correto
+                ambienteAtual.valores[nome] = valor
+                return
+            }
+            ambienteAtual = ambienteAtual.enclosing
+        }
+        valores[nome] = valor
+    }
 }
 
 class RetornoException(val valor: Valor) : RuntimeException()
@@ -193,7 +206,7 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
         return when {
             ctx.ID() != null -> {
                 val nome = ctx.ID().text
-                ambiente.definir(nome, valor)
+                ambiente.atualizarOuDefinir(nome, valor)
                 valor
             }
 
@@ -606,9 +619,14 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
 
 
     override fun visitDeclaracaoEnquanto(ctx: DeclaracaoEnquantoContext): Valor {
-        while (true) {
+        // Vamos usar um contador para evitar loops infinitos durante a depuração
+        var iteracoes = 0
+        val maxIteracoes = 100 // Limite de segurança
+
+        while (iteracoes < maxIteracoes) {
             // Avalia a condição
             val condicao = visit(ctx.expressao())
+            println("Condição do loop: $condicao")
 
             // Verifica se a condição é um valor lógico
             if (condicao !is Valor.Logico) {
@@ -617,20 +635,28 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
 
             // Se a condição for falsa, sai do loop
             if (!condicao.valor) {
+                println("Condição falsa, saindo do loop")
                 break
             }
+
+            println("Iteração $iteracoes do loop")
 
             // Executa o corpo do loop
             try {
                 visit(ctx.declaracao())
             } catch (e: RetornoException) {
-                // Propaga exceções de return
                 throw e
             } catch (e: BreakException) {
                 break
             } catch (e: ContinueException) {
                 continue
             }
+
+            iteracoes++
+        }
+
+        if (iteracoes >= maxIteracoes) {
+            println("Aviso: Loop possivelmente infinito detectado!")
         }
 
         return Valor.Nulo
