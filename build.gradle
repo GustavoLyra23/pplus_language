@@ -1,5 +1,6 @@
 plugins {
     id 'org.jetbrains.kotlin.jvm' version '2.1.20'
+    id 'antlr'
 }
 
 group = 'org.gustavolyra'
@@ -11,11 +12,37 @@ repositories {
 
 dependencies {
     testImplementation 'org.jetbrains.kotlin:kotlin-test'
+
+    antlr 'org.antlr:antlr4:4.13.1'
+    implementation 'org.antlr:antlr4-runtime:4.13.1'
+}
+
+generateGrammarSource {
+    maxHeapSize = "64m"
+    arguments += ['-visitor', '-package', 'org.gustavolyra.portugolpp']
+    outputDirectory = file("$buildDir/generated-src/antlr/main")
+}
+
+sourceSets {
+    main {
+        java {
+            srcDir "$buildDir/generated-src/antlr/main"
+        }
+    }
+}
+
+compileKotlin {
+    dependsOn generateGrammarSource
+}
+
+clean {
+    delete "$buildDir/generated-src"
 }
 
 test {
     useJUnitPlatform()
 }
+
 kotlin {
     jvmToolchain(23)
 }

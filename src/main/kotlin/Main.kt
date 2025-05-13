@@ -1,75 +1,62 @@
-package org.gustavolyra
+package org.gustavolyra.portugolpp
 
+import org.antlr.v4.runtime.*
 import java.nio.file.Files
 import java.nio.file.Paths
 
-// Ponto de entrada do programa
-fun main(args: Array<String>) {
-    if (args.isNotEmpty()) {
-        val filePath = args[0];
-        if (!filePath.endsWith(".p++")) {
-            println("Erro: Arquivo deve ter a extensao correta.")
-            return
+fun main() {
+    val codigo = """
+        classe Principal {
+            funcao inicio() {
+                numero = 10;
+                imprimir(numero);
+            }
         }
-        try {
-            val code = Files.readString(Paths.get(filePath))
-//            executeCode(code, filePath)
-
-        } catch (e: Exception) {
-            println("Erro ao ler o arquivo '$filePath': ${e.message}")
-        }
-
-
-    } else {
-        //iniciarRepl()
-    }
+        imprimir("Olá, Mundo!");
+    """.trimIndent()
+    var fileData = Files.readString(Paths.get("C:\\Users\\gusta\\IdeaProjects\\p_mais_mais\\hi.p++"))
+    executarPortugolPP(fileData)
 }
 
-//fun iniciarRepl() {
-//    val interpreter = Interpreter()
-//    println("P++ REPL (Digie 'sair' para terminar)")
-//    while (true) {
-//        print(">>> ")
-//        val line = readlnOrNull() ?: break
-//        if (line.lowercase().equals("sair")) break
-//        if (line.isNotBlank()) {
-//            try {
-//                executeCode(line, "<REPL>", interpreter)
-//            } catch (e: Exception) {
-//                //Nao vou parar a sessao do REPL...
-//                println("Erro: ${e.message}")
-//            }
-//        }
-//
-//    }
-//}
+fun executarPortugolPP(codigo: String) {
+    try {
+        println("Iniciando análise do código...")
+        val input = CharStreams.fromString(codigo)
+        val lexer = PortugolPPLexer(input)
+        val tokens = CommonTokenStream(lexer)
+        val parser = PortugolPPParser(tokens)
 
+        parser.removeErrorListeners()
+        parser.addErrorListener(object : BaseErrorListener() {
+            override fun syntaxError(
+                recognizer: Recognizer<*, *>,
+                offendingSymbol: Any?,
+                line: Int,
+                charPositionInLine: Int,
+                msg: String?,
+                e: RecognitionException?
+            ) {
+                println("Erro de sintaxe na linha $line:$charPositionInLine - $msg")
+                if (e != null) {
+                    e.printStackTrace()
+                }
+            }
+        })
 
-//TODO: implementar interpretador...
-//fun executeCode(code: String, fileName: String = "<desconhecido>", globalInterpreter: Interpreter? = null) {
-//    try {
-//        val lexer = Lexer(code, fileName)
-//        val tokens = lexer.generateTokens()
-//        val parser = Parser(tokens, fileName)
-//        val ast = parser.parsePrograma()
-//        val interpreter = globalInterpreter ?: Interpeter()
-//        interpreter.interpret(ast)
-//    } catch (e: PPlusException) {
-//        System.err.println(
-//            "${(e as Any).javaClass.simpleName} e" +
-//                    "m $nomeArquivo:${e.linha}:${e.coluna}: ${e.mensagem}"
-//        )
-//    } catch (e: Exception) {
-//        System.err.println("Erro inesperado durante a execução: ${e.message}")
-//    }
-//}
+        println("Analisando código...")
+        val tree = parser.programa()
+        if (tree == null) {
+            println("ERRO: Análise sintática falhou - árvore sintática nula!")
+            return
+        }
 
-open class PPlusException(
-    val mensagem: String,
-    val linha: Int,
-    val coluna: Int
-) : RuntimeException("$mensagem (linha $linha, coluna $coluna)")
+        println("Executando interpretador...")
+        val interpretador = Interpretador()
+        interpretador.interpretar(tree)
 
-class ErroLexico(mensagem: String, linha: Int, coluna: Int) : PPlusException(mensagem, linha, coluna)
-class ErroSintatico(mensagem: String, linha: Int, coluna: Int) : PPlusException(mensagem, linha, coluna)
-class ErroRuntime(mensagem: String, linha: Int = 0, coluna: Int = 0) : PPlusException(mensagem, linha, coluna)
+        println("Terminando execucao!")
+    } catch (e: Exception) {
+        println("Erro ao executar o programa: ${e.message}")
+        e.printStackTrace()
+    }
+}
