@@ -1,15 +1,3 @@
-classe Gustavo {
-  var data: Texto = "Ola mundo";
-  funcao print() {
-    escrever(data);
-  }
+para (var i = 0; i < 10; i = i + 1) {
+   escrever(i);
 }
-
-classe Pessoa {
-   var pessoa: Gustavo;
-}
-
-var p = nova Pessoa();
-p.pessoa = nova Gustavo();
-
-p.pessoa.print();
