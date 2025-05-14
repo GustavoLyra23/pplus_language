@@ -24,8 +24,15 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
     fun interpretar(tree: ProgramaContext) {
         try {
             tree.declaracao().forEach { decl ->
-                decl.declaracaoClasse()?.let {
+                decl.declaracaoInterface()?.let {
                     val nome = it.ID().text
+                    global.definirInterface(nome, it)
+                }
+            }
+
+            tree.declaracao().forEach { decl ->
+                decl.declaracaoClasse()?.let {
+                    val nome = it.ID(0).text
                     global.definirClasse(nome, it)
                 }
             }
@@ -36,9 +43,10 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
                 val main = global.obter("main")
                 if (main is Valor.Funcao) {
                     chamadaFuncao("main", emptyList())
-                } else {
                 }
             } catch (e: Exception) {
+                // Tratar exceção ao executar main (opcional)
+                // println("Erro ao executar função main: ${e.message}")
             }
 
         } catch (e: Exception) {
@@ -47,23 +55,52 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
         }
     }
 
+    override fun visitDeclaracaoInterface(ctx: DeclaracaoInterfaceContext): Valor {
+        val nomeInterface = ctx.ID().text
+        global.definirInterface(nomeInterface, ctx)
+        return Valor.Nulo
+    }
+
+
     override fun visitDeclaracaoClasse(ctx: DeclaracaoClasseContext): Valor {
-        val nomeClasse = ctx.ID()?.text ?: throw RuntimeException("Identificador esperado após 'classe'")
+        val nomeClasse = ctx.ID(0).text
+        var superClasse: String? = null
 
-        ctx.declaracaoFuncao().forEach { metodo ->
-            val tipoRetorno = metodo.tipo()?.text
-            if (tipoRetorno != null && tipoRetorno !in listOf("Inteiro", "Real", "Texto", "Logico", "Nulo") && global.obterClasse(tipoRetorno) == null) {
-                throw RuntimeException("Tipo de retorno inválido no método '${metodo.ID().text}': $tipoRetorno")
+        if (ctx.childCount > 3 && ctx.getChild(2).text == "estende") {
+            superClasse = ctx.getChild(3).text
+            val classeBase = global.obterClasse(superClasse)
+            if (classeBase == null) {
+                throw RuntimeException("Classe base '$superClasse' não encontrada para a classe '$nomeClasse'")
             }
+        }
+        val interfaces = mutableListOf<String>()
+        var implementaIndex = -1
 
-            metodo.listaParams()?.param()?.forEach { param ->
-                val tipoParam = param.tipo().text
-                if (tipoParam !in listOf("Inteiro", "Real", "Texto", "Logico") && global.obterClasse(tipoParam) == null) {
-                    throw RuntimeException("Tipo de parâmetro inválido '${param.ID().text}: $tipoParam' na função '${metodo.ID().text}'")
-                }
+        for (i in 0 until ctx.childCount) {
+            if (ctx.getChild(i).text == "implementa") {
+                implementaIndex = i
+                break
             }
         }
 
+        if (implementaIndex > -1) {
+            var i = implementaIndex + 1
+            while (i < ctx.childCount && ctx.getChild(i).text != "{") {
+                val token = ctx.getChild(i).text
+                if (token != "," && token != "implementa") {
+                    interfaces.add(token)
+                    val interfaceDecl = global.obterInterface(token)
+                    if (interfaceDecl == null) {
+                        throw RuntimeException("Interface '$token' não encontrada")
+                    }
+
+                    if (!verificarImplementacaoInterface(ctx, token)) {
+                        throw RuntimeException("A classe '$nomeClasse' não implementa todos os métodos da interface '$token'")
+                    }
+                }
+                i++
+            }
+        }
         global.definirClasse(nomeClasse, ctx)
         return Valor.Nulo
     }
@@ -137,6 +174,7 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
                 is Valor.Objeto -> valorRetorno.klass
                 is Valor.Funcao -> "Funcao"
                 Valor.Nulo -> "Nulo"
+                is Valor.Interface -> TODO()
             }
 
             if (tipoEsperado != tipoAtual) {
@@ -486,9 +524,81 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
         return visit(ctx.getChild(0))
     }
 
+    private fun buscarPropriedadeNaHierarquia(objeto: Valor.Objeto, nomeCampo: String): Valor? {
+        // Verificar nos campos do objeto
+        val valorCampo = objeto.campos[nomeCampo]
+        if (valorCampo != null) {
+            return valorCampo
+        }
+
+        // Verificar na superclasse, se existir
+        if (objeto.superClasse != null) {
+            // Criar um objeto temporário da superclasse para acessar seus campos
+            val tempObjeto = criarObjetoTemporarioDaClasse(objeto.superClasse)
+            return buscarPropriedadeNaHierarquia(tempObjeto, nomeCampo)
+        }
+
+        return null
+    }
+
+    private fun criarObjetoTemporarioDaClasse(nomeClasse: String): Valor.Objeto {
+        val classe = global.obterClasse(nomeClasse) ?: throw RuntimeException("Classe não encontrada: $nomeClasse")
+
+        val superClasse = global.getSuperClasse(classe)
+        val interfaces = global.getInterfaces(classe)
+
+        val objeto = Valor.Objeto(nomeClasse, mutableMapOf(), superClasse, interfaces)
+
+        // Inicializar apenas os campos (sem chamar métodos)
+        classe.declaracaoVar().forEach { decl ->
+            val nomeCampo = decl.ID().text
+            val valor = decl.expressao()?.let {
+                val oldAmbiente = ambiente
+                ambiente = Ambiente(global).apply { thisObjeto = objeto }
+                val result = visit(it)
+                ambiente = oldAmbiente
+                result
+            } ?: Valor.Nulo
+
+            objeto.campos[nomeCampo] = valor
+        }
+
+        return objeto
+    }
+
+    private fun buscarMetodoNaHierarquia(objeto: Valor.Objeto, nomeMetodo: String): DeclaracaoFuncaoContext? {
+        // Buscar na classe do objeto
+        val classe = global.obterClasse(objeto.klass) ?: return null
+        val metodo = classe.declaracaoFuncao().find { it.ID().text == nomeMetodo }
+
+        if (metodo != null) {
+            return metodo
+        }
+
+        // Buscar na superclasse, se existir
+        if (objeto.superClasse != null) {
+            val classeBase = global.obterClasse(objeto.superClasse) ?: return null
+            val metodoBase = classeBase.declaracaoFuncao().find { it.ID().text == nomeMetodo }
+
+            if (metodoBase != null) {
+                return metodoBase
+            }
+
+            // Continuar buscando recursivamente na hierarquia
+            val superClasseDaBase = global.getSuperClasse(classeBase)
+            if (superClasseDaBase != null) {
+                val objetoBase = Valor.Objeto(objeto.superClasse, mutableMapOf(), superClasseDaBase)
+                return buscarMetodoNaHierarquia(objetoBase, nomeMetodo)
+            }
+        }
+
+        return null
+    }
+
+
     override fun visitChamada(ctx: ChamadaContext): Valor {
         var resultado = visit(ctx.primario())
-        var i = 1;
+        var i = 1
 
         while (i < ctx.childCount) {
             if (ctx.getChild(i).text == ".") {
@@ -499,7 +609,7 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
                 }
 
                 if (i + 2 < ctx.childCount && ctx.getChild(i + 2).text == "(") {
-
+                    // Chamada de método
                     val args = mutableListOf<Valor>()
 
                     if (i + 3 < ctx.childCount && ctx.getChild(i + 3) is ArgumentosContext) {
@@ -510,13 +620,15 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
                         i += 4
                     }
 
-                    val classe = global.obterClasse(resultado.klass) ?: throw RuntimeException("Classe não encontrada: ${resultado.klass}")
-
-                    val metodo = classe.declaracaoFuncao().find { it.ID().text == id } ?: throw RuntimeException("Método não encontrado: $id em classe ${resultado.klass}")
+                    // Buscar método na hierarquia de classes
+                    val metodo = buscarMetodoNaHierarquia(resultado, id)
+                        ?: throw RuntimeException("Método não encontrado: $id em classe ${resultado.klass}")
 
                     resultado = executarMetodo(resultado, metodo, args)
                 } else {
-                    val campoValor = resultado.campos[id]
+                    // Acesso a propriedade
+                    // Verificar no objeto atual e na hierarquia de classes
+                    val campoValor = buscarPropriedadeNaHierarquia(resultado, id)
                     resultado = campoValor ?: Valor.Nulo
                     i += 2
                 }
@@ -526,6 +638,41 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
         }
 
         return resultado
+    }
+
+    fun verificarImplementacaoInterface(classeContext: DeclaracaoClasseContext, nomeInterface: String): Boolean {
+        val interfaceContext = global.obterInterface(nomeInterface) ?: return false
+
+        // Para cada assinatura de método na interface
+        for (assinatura in interfaceContext.assinaturaMetodo()) {
+            val nomeMetodo = assinatura.ID().text
+
+            // Verificar se existe uma implementação na classe
+            val implementado = classeContext.declaracaoFuncao()
+                .any { it.ID().text == nomeMetodo }
+
+            if (!implementado) {
+                // Verificar se existe na superclasse, se houver
+                val superClasse = global.getSuperClasse(classeContext)
+                if (superClasse != null) {
+                    val classeBase = global.obterClasse(superClasse)
+                    if (classeBase != null) {
+                        val implementadoNaSuperClasse = classeBase.declaracaoFuncao()
+                            .any { it.ID().text == nomeMetodo }
+
+                        if (!implementadoNaSuperClasse) {
+                            return false
+                        }
+                    } else {
+                        return false
+                    }
+                } else {
+                    return false
+                }
+            }
+        }
+
+        return true
     }
 
     override fun visitDeclaracaoPara(ctx: DeclaracaoParaContext): Valor {
@@ -699,6 +846,7 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
                         is Valor.Objeto -> resultado.klass
                         is Valor.Funcao -> "Funcao"
                         Valor.Nulo -> "Nulo"
+                        is Valor.Interface -> TODO()
                     }
 
                     if (tipoEsperado != tipoAtual) {
@@ -817,11 +965,88 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
         }
     }
 
+    private fun avaliarArgumento(arg: String): Valor {
+        // Implementação simplificada para converter string de argumento em Valor
+        return when {
+            arg.startsWith("\"") && arg.endsWith("\"") -> Valor.Texto(arg.substring(1, arg.length - 1))
+            arg == "verdadeiro" -> Valor.Logico(true)
+            arg == "falso" -> Valor.Logico(false)
+            arg.contains(".") -> try {
+                Valor.Real(arg.toDouble())
+            } catch (e: Exception) {
+                Valor.Nulo
+            }
+
+            arg.all { it.isDigit() } -> try {
+                Valor.Inteiro(arg.toInt())
+            } catch (e: Exception) {
+                Valor.Nulo
+            }
+
+            else -> ambiente.obter(arg) // Tenta recuperar uma variável
+        }
+    }
+
+    private fun extrairArgumentosDoConstructor(ctx: PrimarioContext): List<Valor> {
+        val args = mutableListOf<Valor>()
+
+        // Localizar os argumentos entre parênteses na chamada do construtor
+        if (ctx.getChildCount() > 2 && ctx.getChild(ctx.getChildCount() - 2).text == "(") {
+            val argText = ctx.getChild(ctx.getChildCount() - 1).text
+            if (argText != ")" && argText.isNotEmpty()) {
+                // Extrair e avaliar cada argumento
+                val argumentos = argText.split(",")
+                for (arg in argumentos) {
+                    // Esta é uma versão simplificada - numa implementação real
+                    // você precisaria de um parser mais robusto para os argumentos
+                    val valor = avaliarArgumento(arg.trim())
+                    args.add(valor)
+                }
+            }
+        }
+
+        return args
+    }
+
+    private fun inicializarCamposDaClasseBase(objeto: Valor.Objeto, nomeClasseBase: String) {
+        val classeBase = global.obterClasse(nomeClasseBase) ?: return
+
+        // Inicializar campos da superclasse da classe base, se existir
+        val superClasseDaBase = global.getSuperClasse(classeBase)
+        if (superClasseDaBase != null) {
+            inicializarCamposDaClasseBase(objeto, superClasseDaBase)
+        }
+
+        // Inicializar campos da classe base
+        classeBase.declaracaoVar().forEach { decl ->
+            val nomeCampo = decl.ID().text
+            // Só inicializa se o campo não já foi definido por uma subclasse
+            if (!objeto.campos.containsKey(nomeCampo)) {
+                val oldAmbiente = ambiente
+                ambiente = Ambiente(global).apply { thisObjeto = objeto }
+                val valor = decl.expressao()?.let { visit(it) } ?: Valor.Nulo
+                objeto.campos[nomeCampo] = valor
+                ambiente = oldAmbiente
+            }
+        }
+    }
+
     private fun criarObjetoClasse(nomeClasse: String, ctx: PrimarioContext): Valor {
         val classe = global.obterClasse(nomeClasse) ?: throw RuntimeException("Classe não encontrada: $nomeClasse")
 
-        val objeto = Valor.Objeto(nomeClasse, mutableMapOf())
+        // Extrair superclasse e interfaces
+        val superClasse = global.getSuperClasse(classe)
+        val interfaces = global.getInterfaces(classe)
 
+        // Criar o objeto
+        val objeto = Valor.Objeto(nomeClasse, mutableMapOf(), superClasse, interfaces)
+
+        // Inicializar campos da superclasse, se existir
+        if (superClasse != null) {
+            inicializarCamposDaClasseBase(objeto, superClasse)
+        }
+
+        // Inicializar campos da classe atual
         classe.declaracaoVar().forEach { decl ->
             val nomeCampo = decl.ID().text
             val oldAmbiente = ambiente
@@ -831,26 +1056,11 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
             ambiente = oldAmbiente
         }
 
+        // Chamar inicializador, se existir
         val inicializarMetodo = classe.declaracaoFuncao().find { it.ID().text == "inicializar" }
         if (inicializarMetodo != null) {
-
-            val argumentosMatch = Regex("nova$nomeClasse\\((.*)\\)").find(ctx.text)
-            val argumentosTexto = argumentosMatch?.groupValues?.get(1) ?: ""
-
-            val argumentos = if (argumentosTexto.isNotEmpty()) {
-                try {
-                    if (argumentosTexto.contains(".")) {
-                        listOf(Valor.Real(argumentosTexto.toDouble()))
-                    } else {
-                        listOf(Valor.Inteiro(argumentosTexto.toInt()))
-                    }
-                } catch (e: Exception) {
-                    emptyList()
-                }
-            } else {
-                emptyList()
-            }
-
+            // Extrair argumentos da chamada do construtor
+            val argumentos = extrairArgumentosDoConstructor(ctx)
             executarMetodo(objeto, inicializarMetodo, argumentos)
         }
 

@@ -18,6 +18,15 @@ declaracao
     | declaracaoFacaEnquanto
     | declaracaoQuebra
     | declaracaoContinue
+    | declaracaoInterface
+    ;
+
+assinaturaMetodo
+    : 'funcao' ID '(' listaParams? ')' (':' tipo)? ';'
+    ;
+
+declaracaoInterface
+    : 'interface' ID '{' assinaturaMetodo* '}'
     ;
 
 declaracaoQuebra
@@ -50,7 +59,7 @@ declaracaoReturn
     ;
 
 declaracaoClasse
-    : 'classe' ID '{' (declaracaoVar | declaracaoFuncao)* '}'
+    : 'classe' ID ('estende' ID)? ('implementa' ID (',' ID)*)? '{' (declaracaoVar | declaracaoFuncao)* '}'
     ;
 
 declaracaoVar

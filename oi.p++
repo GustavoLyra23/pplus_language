@@ -1,15 +1,29 @@
-classe Gustavo {
-  var data: Texto = "Ola mundo";
-  funcao print() {
-    escrever(data);
-  }
+
+interface Animal {
+    funcao fazerSom(): Nulo;
 }
 
-classe Pessoa {
-   var pessoa: Gustavo;
+classe SerVivo {
+    var vivo: Logico = verdadeiro;
+    
+    funcao estaVivo(): Logico {
+        return vivo;
+    }
 }
 
-var p = nova Pessoa();
-p.pessoa = nova Gustavo();
+classe Cachorro estende SerVivo implementa Animal {
+    var nome: Texto;
+    
+    funcao inicializar(n: Texto) {
+        nome = n;
+    }
+    
+    funcao fazerSom(): Nulo {
+        escrever("Au au!");
+    }
+}
 
-p.pessoa.print();
+var rex = nova Cachorro("Rex");
+escrever(rex.nome);
+escrever(rex.estaVivo());
+rex.fazerSom();
