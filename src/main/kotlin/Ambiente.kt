@@ -60,4 +60,8 @@ class Ambiente(val enclosing: Ambiente? = null) {
         }
         valores[nome] = valor
     }
+
+    fun getTodosValores(): Map<String, Valor> {
+        return valores.toMap()
+    }
 }

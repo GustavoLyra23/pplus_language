@@ -1,9 +1,29 @@
-var j: Inteiro = 0;
+classe Jonas {
+   var gustavo: Texto;
+   funcao jonas(data: Texto): Nulo {
+     escrever(data);
+   }
+}
 
-faca  {
-      j = j + 1;
-      se (j == 6) {
-            continue;
-       }
-    escrever(j);
-} enquanto (j < 10);
+classe Gustavo {
+   var gustavo: Real = 0.1;
+    funcao gustavo(): Nulo {
+      escrever(gustavo);
+    }
+
+    funcao parabelo(data: Texto): Nulo {
+      escrever(data);
+    }
+}
+
+
+
+var j = nova Jonas();
+var g = nova Gustavo();
+var g = nova Gustavo();
+g.gustavo();
+g.parabelo("oi");
+escrever(j.gustavo);
+
+funcao escopoTeste(){
+}

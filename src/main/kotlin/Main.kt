@@ -18,7 +18,7 @@ fun executarPortugolPP(codigo: String) {
         val parser = PortugolPPParser(tokens)
 
         parser.removeErrorListeners()
-        parser.addErrorListener(object : BaseErrorListener() {
+        parser.addErrorListener(object : BaseErrorListener() { //pplus run C:\Users\gusta\IdeaProjects\p_mais_mais\oi.p++
             override fun syntaxError(
                 recognizer: Recognizer<*, *>,
                 offendingSymbol: Any?,

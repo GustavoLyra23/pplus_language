@@ -141,7 +141,7 @@ primario
     | 'falso'
     | NUMERO
     | TEXTO_LITERAL
-    | ID
+    | ID ('(' argumentos? ')')?
     | 'this'
     | '(' expressao ')'
     | 'nova' ID '(' argumentos? ')'

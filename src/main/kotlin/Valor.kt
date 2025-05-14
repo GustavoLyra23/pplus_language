@@ -8,7 +8,12 @@ sealed class Valor {
     data class Texto(val valor: String) : Valor()
     data class Logico(val valor: Boolean) : Valor()
     data class Objeto(val klass: String, val campos: MutableMap<String, Valor>) : Valor()
-    data class Funcao(val nome: String, val declaracao: DeclaracaoFuncaoContext? = null, val metodoCallback: ((List<Valor>) -> Valor)? = null) : Valor()
+    data class Funcao(
+        val nome: String,
+        val declaracao: DeclaracaoFuncaoContext? = null,
+        val tipoRetorno: String? = null,
+        val metodoCallback: ((List<Valor>) -> Valor)? = null
+    ) : Valor()
 
     object Nulo : Valor()
 

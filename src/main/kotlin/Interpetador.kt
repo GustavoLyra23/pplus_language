@@ -7,6 +7,7 @@ import org.gustavolyra.portugolpp.PortugolPPParser.*
 class Interpretador : PortugolPPBaseVisitor<Valor>() {
     private val global = Ambiente()
     private var ambiente = global
+    private var funcaoAtual: Valor.Funcao? = null
 
     init {
         global.definir("escrever", Valor.Funcao("escrever", null) { args ->
@@ -48,6 +49,26 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
 
     override fun visitDeclaracaoClasse(ctx: DeclaracaoClasseContext): Valor {
         val nomeClasse = ctx.ID()?.text ?: throw RuntimeException("Identificador esperado após 'classe'")
+
+        ctx.declaracaoFuncao().forEach { metodo ->
+            val tipoRetorno = metodo.tipo()?.text
+            if (tipoRetorno != null &&
+                tipoRetorno !in listOf("Inteiro", "Real", "Texto", "Logico", "Nulo") &&
+                global.obterClasse(tipoRetorno) == null
+            ) {
+                throw RuntimeException("Tipo de retorno inválido no método '${metodo.ID().text}': $tipoRetorno")
+            }
+
+            metodo.listaParams()?.param()?.forEach { param ->
+                val tipoParam = param.tipo().text
+                if (tipoParam !in listOf("Inteiro", "Real", "Texto", "Logico") &&
+                    global.obterClasse(tipoParam) == null
+                ) {
+                    throw RuntimeException("Tipo de parâmetro inválido '${param.ID().text}: $tipoParam' na função '${metodo.ID().text}'")
+                }
+            }
+        }
+
         global.definirClasse(nomeClasse, ctx)
         return Valor.Nulo
     }
@@ -83,15 +104,54 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
         return Valor.Nulo
     }
 
+    private fun isValidType(tipo: String?): Boolean {
+        if (tipo == null) return true
+        return tipo in listOf("Inteiro", "Real", "Texto", "Logico", "Nulo") || global.obterClasse(tipo) != null
+    }
+
+    private fun validarParametros(funcao: DeclaracaoFuncaoContext) {
+        funcao.listaParams()?.param()?.forEach { param ->
+            val tipoParam = param.tipo().text
+            if (!isValidType(tipoParam)) {
+                throw RuntimeException("Tipo de parâmetro inválido '${param.ID().text}: $tipoParam' na função '${funcao.ID().text}'")
+            }
+        }
+    }
+
     override fun visitDeclaracaoFuncao(ctx: DeclaracaoFuncaoContext): Valor {
         val nome = ctx.ID().text
-        ambiente.definir(nome, Valor.Funcao(nome, ctx))
+        val tipoRetorno = ctx.tipo()?.text
+        if (tipoRetorno != null && tipoRetorno !in listOf("Inteiro", "Real", "Texto", "Logico", "Nulo") && global.obterClasse(tipoRetorno) == null) {
+            throw RuntimeException("Tipo de retorno inválido: $tipoRetorno")
+        }
+
+        ambiente.definir(nome, Valor.Funcao(nome, ctx, tipoRetorno))
         return Valor.Nulo
     }
 
     override fun visitDeclaracaoReturn(ctx: DeclaracaoReturnContext): Valor {
-        throw RetornoException(ctx.expressao()?.let { visit(it) } ?: Valor.Nulo)
+        val valorRetorno = ctx.expressao()?.let { visit(it) } ?: Valor.Nulo
+
+        if (funcaoAtual != null && funcaoAtual!!.tipoRetorno != null) {
+            val tipoEsperado = funcaoAtual!!.tipoRetorno
+            val tipoAtual = when (valorRetorno) {
+                is Valor.Inteiro -> "Inteiro"
+                is Valor.Real -> "Real"
+                is Valor.Texto -> "Texto"
+                is Valor.Logico -> "Logico"
+                is Valor.Objeto -> valorRetorno.klass
+                is Valor.Funcao -> "Funcao"
+                Valor.Nulo -> "Nulo"
+            }
+
+            if (tipoEsperado != tipoAtual) {
+                throw RuntimeException("Erro de tipo: função '${funcaoAtual!!.nome}' deve retornar '$tipoEsperado', mas está retornando '$tipoAtual'")
+            }
+        }
+
+        throw RetornoException(valorRetorno)
     }
+
 
     override fun visitDeclaracaoSe(ctx: DeclaracaoSeContext): Valor {
         val condicao = visit(ctx.expressao())
@@ -474,7 +534,6 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
     }
 
     override fun visitDeclaracaoPara(ctx: DeclaracaoParaContext): Valor {
-        // Executa a inicialização
         if (ctx.declaracaoVar() != null) {
             visit(ctx.declaracaoVar())
         } else if (ctx.expressao(0) != null) {
@@ -482,32 +541,25 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
         }
 
         while (true) {
-            // Avalia a condição
             val condicao = visit(ctx.expressao(1))
 
-            // Verifica se a condição é um valor lógico
             if (condicao !is Valor.Logico) {
                 throw RuntimeException("Condição do 'para' deve ser um valor lógico")
             }
 
-            // Se a condição for falsa, sai do loop
             if (!condicao.valor) {
                 break
             }
 
-            // Executa o corpo do loop
             try {
                 visit(ctx.declaracao())
             } catch (e: RetornoException) {
-                // Propaga exceções de return
                 throw e
             } catch (e: BreakException) {
                 break
             } catch (e: ContinueException) {
                 continue
             }
-
-            // Executa o incremento
             visit(ctx.expressao(2))
         }
 
@@ -518,10 +570,8 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
     override fun visitDeclaracaoFacaEnquanto(ctx: DeclaracaoFacaEnquantoContext): Valor {
         do {
             try {
-                // Executa o corpo do loop
                 visit(ctx.declaracao())
             } catch (e: RetornoException) {
-                // Propaga exceções de return
                 throw e
             } catch (e: BreakException) {
                 break
@@ -537,19 +587,16 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
                 continue
             }
 
-            // Avalia a condição - sempre executado após o corpo do loop, mesmo após um continue
             val condicao = visit(ctx.expressao())
 
-            // Verifica se a condição é um valor lógico
             if (condicao !is Valor.Logico) {
                 throw RuntimeException("Condição do 'enquanto' deve ser um valor lógico")
             }
 
-            // Sai do loop se a condição for falsa
             if (!condicao.valor) {
                 break
             }
-        } while (true)  // Loop infinito controlado pelas condições internas
+        } while (true)
 
         return Valor.Nulo
     }
@@ -633,31 +680,66 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
             throw RuntimeException("Função não encontrada: $nome", e)
         }
 
-        return if (funcao.metodoCallback != null) {
-            funcao.metodoCallback.invoke(argumentos)
-        } else {
-            val decl = funcao.declaracao ?: throw RuntimeException("Declaração de função não disponível: $nome")
-            val funcaoAmbiente = Ambiente(global)
-            decl.listaParams()?.param()?.forEachIndexed { i, param ->
-                if (i < argumentos.size) funcaoAmbiente.definir(param.ID().text, argumentos[i])
+        val funcaoAnterior = funcaoAtual
+        funcaoAtual = funcao
+
+        try {
+            if (funcao.metodoCallback != null) {
+                val resultado = funcao.metodoCallback.invoke(argumentos)
+
+                if (funcao.tipoRetorno != null) {
+                    val tipoEsperado = funcao.tipoRetorno
+                    val tipoAtual = when (resultado) {
+                        is Valor.Inteiro -> "Inteiro"
+                        is Valor.Real -> "Real"
+                        is Valor.Texto -> "Texto"
+                        is Valor.Logico -> "Logico"
+                        is Valor.Objeto -> resultado.klass
+                        is Valor.Funcao -> "Funcao"
+                        Valor.Nulo -> "Nulo"
+                    }
+
+                    if (tipoEsperado != tipoAtual) {
+                        throw RuntimeException("Erro de tipo: função '$nome' deve retornar '$tipoEsperado', mas está retornando '$tipoAtual'")
+                    }
+                }
+
+                return resultado
+            } else {
+                val decl = funcao.declaracao ?: throw RuntimeException("Declaração de função não disponível: $nome")
+                val funcaoAmbiente = Ambiente(global)
+                decl.listaParams()?.param()?.forEachIndexed { i, param ->
+                    if (i < argumentos.size) funcaoAmbiente.definir(param.ID().text, argumentos[i])
+                }
+                val oldAmbiente = ambiente
+                ambiente = funcaoAmbiente
+                try {
+                    visit(decl.bloco())
+                    return Valor.Nulo
+                } catch (retorno: RetornoException) {
+                    return retorno.valor
+                } finally {
+                    ambiente = oldAmbiente
+                }
             }
-            val oldAmbiente = ambiente
-            ambiente = funcaoAmbiente
-            try {
-                visit(decl.bloco())
-                Valor.Nulo
-            } catch (retorno: RetornoException) {
-                retorno.valor
-            } finally {
-                ambiente = oldAmbiente
-            }
+        } finally {
+            funcaoAtual = funcaoAnterior
         }
     }
 
+
     private fun executarMetodo(objeto: Valor.Objeto, metodo: DeclaracaoFuncaoContext, argumentos: List<Valor>): Valor {
         val metodoAmbiente = Ambiente(global)
-
         metodoAmbiente.thisObjeto = objeto
+
+        val funcao = Valor.Funcao(
+            metodo.ID().text,
+            metodo,
+            metodo.tipo()?.text
+        )
+
+        val funcaoAnterior = funcaoAtual
+        funcaoAtual = funcao
 
         val params = metodo.listaParams()?.param() ?: listOf()
 
@@ -682,6 +764,7 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
             return retorno.valor
         } finally {
             ambiente = oldAmbiente
+            funcaoAtual = funcaoAnterior
         }
     }
 
@@ -691,10 +774,21 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
             ctx.TEXTO_LITERAL() != null -> Valor.Texto(ctx.TEXTO_LITERAL().text.removeSurrounding("\""))
             ctx.ID() != null && !ctx.text.startsWith("nova") -> {
                 val nome = ctx.ID().text
-                try {
-                    ambiente.obter(nome)
-                } catch (e: Exception) {
-                    throw e
+                if (ctx.childCount > 1 && ctx.getChild(1).text == "(") {
+                    val argumentos = if (ctx.childCount > 2 && ctx.getChild(2) is ArgumentosContext) {
+                        val argsCtx = ctx.getChild(2) as ArgumentosContext
+                        argsCtx.expressao().map { visit(it) }
+                    } else {
+                        emptyList()
+                    }
+
+                    chamadaFuncao(nome, argumentos)
+                } else {
+                    try {
+                        ambiente.obter(nome)
+                    } catch (e: Exception) {
+                        throw e
+                    }
                 }
             }
 
@@ -711,7 +805,6 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
                     if (classe == null) {
                         throw RuntimeException("Classe não encontrada: $nomeClasse")
                     }
-
                     return criarObjetoClasse(nomeClasse, ctx)
                 } else {
                     throw RuntimeException("Sintaxe inválida para criação de objeto")
