@@ -1,12 +1,57 @@
-package org.gustavolyra.portugolpp
-
 import org.antlr.v4.runtime.*
-import java.nio.file.Files
-import java.nio.file.Paths
+import org.gustavolyra.portugolpp.Interpretador
+import org.gustavolyra.portugolpp.PortugolPPLexer
+import org.gustavolyra.portugolpp.PortugolPPParser
+import java.io.File
+import kotlin.system.exitProcess
 
-fun main() {
-    val fileData = Files.readString(Paths.get("C:\\Users\\gusta\\IdeaProjects\\p_mais_mais\\oi.p++"))
-    executarPortugolPP(fileData)
+fun main(args: Array<String>) {
+    when {
+        args.isEmpty() -> modoInterativo()
+        args.first() == "run" && args.size > 1 -> executarArquivo(args[1])
+        else -> mostrarAjuda()
+    }
+}
+
+fun modoInterativo() {
+    println("Portugol++ CLI - Modo Interativo")
+    println("Digite 'exit' para sair")
+    println("Digite 'run <caminho>' para executar um arquivo")
+
+    while (true) {
+        print("> ")
+        val input = readlnOrNull()?.trim() ?: continue
+        when {
+            input == "exit" -> exitProcess(0)
+            input.startsWith("run ") -> {
+                val caminho = input.substring(4)
+                executarArquivo(caminho)
+            }
+
+            else -> println("Comando não reconhecido. Digite 'run <caminho>' ou 'exit'.")
+        }
+    }
+}
+
+fun executarArquivo(caminho: String) {
+    try {
+        val arquivo = File(caminho)
+        if (!arquivo.exists()) {
+            println("Erro: Arquivo não encontrado!")
+            return
+        }
+
+        val fileData = arquivo.readText()
+        executarPortugolPP(fileData)
+    } catch (e: Exception) {
+        println("Erro ao ler/executar o arquivo: ${e.message}")
+    }
+}
+
+fun mostrarAjuda() {
+    println("Uso do Portugol++ CLI:")
+    println("  Sem argumentos   - Iniciar modo interativo")
+    println("  run <arquivo>    - Executar um arquivo Portugol++")
 }
 
 fun executarPortugolPP(codigo: String) {
@@ -18,14 +63,9 @@ fun executarPortugolPP(codigo: String) {
         val parser = PortugolPPParser(tokens)
 
         parser.removeErrorListeners()
-        parser.addErrorListener(object : BaseErrorListener() { //pplus run C:\Users\gusta\IdeaProjects\p_mais_mais\oi.p++
+        parser.addErrorListener(object : BaseErrorListener() {
             override fun syntaxError(
-                recognizer: Recognizer<*, *>,
-                offendingSymbol: Any?,
-                line: Int,
-                charPositionInLine: Int,
-                msg: String?,
-                e: RecognitionException?
+                recognizer: Recognizer<*, *>, offendingSymbol: Any?, line: Int, charPositionInLine: Int, msg: String?, e: RecognitionException?
             ) {
                 println("Erro de sintaxe na linha $line:$charPositionInLine - $msg")
                 e?.printStackTrace()

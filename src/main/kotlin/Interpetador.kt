@@ -52,18 +52,13 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
 
         ctx.declaracaoFuncao().forEach { metodo ->
             val tipoRetorno = metodo.tipo()?.text
-            if (tipoRetorno != null &&
-                tipoRetorno !in listOf("Inteiro", "Real", "Texto", "Logico", "Nulo") &&
-                global.obterClasse(tipoRetorno) == null
-            ) {
+            if (tipoRetorno != null && tipoRetorno !in listOf("Inteiro", "Real", "Texto", "Logico", "Nulo") && global.obterClasse(tipoRetorno) == null) {
                 throw RuntimeException("Tipo de retorno inválido no método '${metodo.ID().text}': $tipoRetorno")
             }
 
             metodo.listaParams()?.param()?.forEach { param ->
                 val tipoParam = param.tipo().text
-                if (tipoParam !in listOf("Inteiro", "Real", "Texto", "Logico") &&
-                    global.obterClasse(tipoParam) == null
-                ) {
+                if (tipoParam !in listOf("Inteiro", "Real", "Texto", "Logico") && global.obterClasse(tipoParam) == null) {
                     throw RuntimeException("Tipo de parâmetro inválido '${param.ID().text}: $tipoParam' na função '${metodo.ID().text}'")
                 }
             }
@@ -680,6 +675,13 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
             throw RuntimeException("Função não encontrada: $nome", e)
         }
 
+        if (funcao.metodoCallback == null) {
+            val numParamsDeclarados = funcao.declaracao?.listaParams()?.param()?.size ?: 0
+            if (argumentos.size > numParamsDeclarados) {
+                throw RuntimeException("Função '$nome' recebeu ${argumentos.size} parâmetros, mas espera $numParamsDeclarados")
+            }
+        }
+
         val funcaoAnterior = funcaoAtual
         funcaoAtual = funcao
 
@@ -733,9 +735,7 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
         metodoAmbiente.thisObjeto = objeto
 
         val funcao = Valor.Funcao(
-            metodo.ID().text,
-            metodo,
-            metodo.tipo()?.text
+            metodo.ID().text, metodo, metodo.tipo()?.text
         )
 
         val funcaoAnterior = funcaoAtual

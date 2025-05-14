@@ -1,29 +1,15 @@
-classe Jonas {
-   var gustavo: Texto;
-   funcao jonas(data: Texto): Nulo {
-     escrever(data);
-   }
-}
-
 classe Gustavo {
-   var gustavo: Real = 0.1;
-    funcao gustavo(): Nulo {
-      escrever(gustavo);
-    }
-
-    funcao parabelo(data: Texto): Nulo {
-      escrever(data);
-    }
+  var data: Texto = "Ola mundo";
+  funcao print() {
+    escrever(data);
+  }
 }
 
-
-
-var j = nova Jonas();
-var g = nova Gustavo();
-var g = nova Gustavo();
-g.gustavo();
-g.parabelo("oi");
-escrever(j.gustavo);
-
-funcao escopoTeste(){
+classe Pessoa {
+   var pessoa: Gustavo;
 }
+
+var p = nova Pessoa();
+p.pessoa = nova Gustavo();
+
+p.pessoa.print();
