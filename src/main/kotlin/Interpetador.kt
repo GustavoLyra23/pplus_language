@@ -23,8 +23,6 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
         global.definir("ler", Valor.Funcao("ler", null) { args ->
             Scanner(System.`in`).nextLine().let { Valor.Texto(it) }
         })
-
-
     }
 
     fun interpretar(tree: ProgramaContext) {
@@ -180,6 +178,8 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
                 is Valor.Funcao -> "Funcao"
                 Valor.Nulo -> "Nulo"
                 is Valor.Interface -> TODO()
+                is Valor.Lista -> TODO()
+                is Valor.Mapa -> TODO()
             }
 
             if (tipoEsperado != tipoAtual) {
@@ -849,6 +849,8 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
                         is Valor.Funcao -> "Funcao"
                         Valor.Nulo -> "Nulo"
                         is Valor.Interface -> TODO()
+                        is Valor.Lista -> TODO()
+                        is Valor.Mapa -> TODO()
                     }
 
                     if (tipoEsperado != tipoAtual) {

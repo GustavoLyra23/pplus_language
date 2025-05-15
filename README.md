@@ -1,0 +1,40 @@
+<p align="center">
+  <img src="./asset/ppp.png" alt="P++ Programming Language Logo" width="150">
+</p>
+
+<h1 align="center">P++ Programming Language</h1>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/language-kotlin-orange.svg" alt="Kotlin">
+  <img src="https://img.shields.io/badge/JDK-21-blue.svg" alt="JDK 21">
+  <img src="https://img.shields.io/badge/status-development-green.svg" alt="Status">
+  <img src="https://img.shields.io/badge/license-MIT-brightgreen.svg" alt="License">
+</p>
+
+<p align="center">
+  <b>P++</b> é uma linguagem de programação baseada em Portugol, implementada em Kotlin, 
+  com sintaxe inspirada em linguagens C-like mas com palavras-chave em português.
+</p>
+
+## Sobre o Projeto
+
+P++ (ou p_mais_mais) é uma linguagem de programação educacional destinada a falantes de português, facilitando o aprendizado de programação através de uma sintaxe semelhante ao Portugol, mas com recursos modernos de linguagens orientadas a objetos.
+
+## Características
+
+- **Sintaxe amigável** em português baseada em Portugol
+- **Programação Orientada a Objetos** com classes, herança e interfaces
+- **Tipagem dinâmica** para facilitar o aprendizado
+- **Estruturas de controle** (condicionais, loops)
+- **Funções e métodos** com parâmetros e retornos
+- **Entrada e saída** através de funções nativas
+- **Coleções** como listas e mapas
+
+## Requisitos
+
+- Java JDK 21 ou superior
+- Gradle 8.0 ou superior
+
+## Instalação
+
+Você pode clonar o repositório e construir o projeto usando Gradle:

@@ -83,6 +83,8 @@ tipo
     | 'Real'
     | 'Texto'
     | 'Logico'
+    | 'Lista'
+    | 'Mapa'
     | ID
     ;
 
@@ -95,12 +97,17 @@ expressao
     ;
 
 atribuicao
-    : (ID | acesso) '=' expressao
+    : (ID | acesso | acessoArray) '=' expressao
     | logicaOu
     ;
 
 acesso
     : primario '.' ID
+    ;
+
+acessoArray
+    : primario '[' expressao ']'
+    | primario '[' expressao ']' '[' expressao ']'
     ;
 
 logicaOu
@@ -134,6 +141,7 @@ unario
 
 chamada
     : primario ('.' ID ('(' argumentos? ')')?)*
+    | acessoArray
     ;
 
 chamadaFuncao
@@ -154,7 +162,18 @@ primario
     | 'this'
     | '(' expressao ')'
     | 'nova' ID '(' argumentos? ')'
+    | listaLiteral
+    | mapaLiteral
     ;
+
+listaLiteral
+    : '[' (expressao (',' expressao)*)? ']'
+    ;
+
+mapaLiteral
+    : '[[' ']' ']'
+    ;
+
 
 // Regras do lexer
 ID: [a-zA-Z_][a-zA-Z0-9_]*;
