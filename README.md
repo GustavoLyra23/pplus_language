@@ -13,12 +13,12 @@
 
 <p align="center">
   <b>P++</b> é uma linguagem de programação baseada em Portugol, implementada em Kotlin, 
-  com sintaxe inspirada em linguagens C-like mas com palavras-chave em português.
+  com sintaxe inspirada Portugol.
 </p>
 
 ## Sobre o Projeto
 
-P++ (ou p_mais_mais) é uma linguagem de programação educacional destinada a falantes de português, facilitando o aprendizado de programação através de uma sintaxe semelhante ao Portugol, mas com recursos modernos de linguagens orientadas a objetos.
+P++ foi destinado a falantes de português, facilitando o aprendizado de programação através de uma sintaxe semelhante ao Portugol, mas com recursos modernos de linguagens orientadas a objetos.
 
 ## Características
 
