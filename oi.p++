@@ -1,3 +1,6 @@
 para (var i = 0; i < 10; i = i + 1) {
    escrever(i);
 }
+
+var data = ler();
+escrever(data);

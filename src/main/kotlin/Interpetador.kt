@@ -1,6 +1,7 @@
 package org.gustavolyra.portugolpp
 
 import org.gustavolyra.portugolpp.PortugolPPParser.*
+import java.util.*
 
 
 @Suppress("REDUNDANT_OVERRIDE", "ABSTRACT_MEMBER_NOT_IMPLEMENTED")
@@ -19,6 +20,11 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
             println(args.joinToString(" "))
             Valor.Nulo
         })
+        global.definir("ler", Valor.Funcao("ler", null) { args ->
+            Scanner(System.`in`).nextLine().let { Valor.Texto(it) }
+        })
+
+
     }
 
     fun interpretar(tree: ProgramaContext) {
