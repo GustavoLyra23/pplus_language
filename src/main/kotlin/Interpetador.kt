@@ -1067,22 +1067,36 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
                 // Para acesso bidimensional
                 if (ctx.expressao().size > 1) {
                     val elemento = container.elementos[indice.valor]
-
-                    if (elemento !is Valor.Lista) {
-                        throw RuntimeException("Elemento no índice ${indice.valor} não é uma lista")
-                    }
-
                     val segundoIndice = visit(ctx.expressao(1))
 
-                    if (segundoIndice !is Valor.Inteiro) {
-                        throw RuntimeException("Segundo índice deve ser um número inteiro")
-                    }
+                    when (elemento) {
+                        is Valor.Lista -> {
+                            if (segundoIndice !is Valor.Inteiro) {
+                                throw RuntimeException("Segundo índice deve ser um número inteiro para acessar uma lista")
+                            }
 
-                    if (segundoIndice.valor < 0 || segundoIndice.valor >= elemento.elementos.size) {
-                        throw RuntimeException("Segundo índice fora dos limites da lista: ${segundoIndice.valor}")
-                    }
+                            if (segundoIndice.valor < 0 || segundoIndice.valor >= elemento.elementos.size) {
+                                throw RuntimeException("Segundo índice fora dos limites da lista: ${segundoIndice.valor}")
+                            }
 
-                    return elemento.elementos[segundoIndice.valor]
+                            return elemento.elementos[segundoIndice.valor]
+                        }
+
+                        is Valor.Mapa -> {
+                            return elemento.elementos[segundoIndice] ?: Valor.Nulo
+                        }
+
+                        is Valor.Objeto -> {
+                            if (segundoIndice !is Valor.Texto) {
+                                throw RuntimeException("Chave para acessar campo de objeto deve ser texto")
+                            }
+                            return elemento.campos[segundoIndice.valor] ?: Valor.Nulo
+                        }
+
+                        else -> {
+                            throw RuntimeException("Elemento no índice ${indice.valor} não suporta acesso indexado")
+                        }
+                    }
                 }
 
                 return container.elementos[indice.valor]
@@ -1090,6 +1104,42 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
 
             is Valor.Mapa -> {
                 val chave = visit(ctx.expressao(0))
+
+                // Para acesso bidimensional em mapas
+                if (ctx.expressao().size > 1) {
+                    val primeiroElemento = container.elementos[chave] ?: Valor.Nulo
+                    val segundoIndice = visit(ctx.expressao(1))
+
+                    when (primeiroElemento) {
+                        is Valor.Lista -> {
+                            if (segundoIndice !is Valor.Inteiro) {
+                                throw RuntimeException("Segundo índice deve ser um número inteiro para acessar uma lista")
+                            }
+
+                            if (segundoIndice.valor < 0 || segundoIndice.valor >= primeiroElemento.elementos.size) {
+                                throw RuntimeException("Segundo índice fora dos limites da lista: ${segundoIndice.valor}")
+                            }
+
+                            return primeiroElemento.elementos[segundoIndice.valor]
+                        }
+
+                        is Valor.Mapa -> {
+                            return primeiroElemento.elementos[segundoIndice] ?: Valor.Nulo
+                        }
+
+                        is Valor.Objeto -> {
+                            if (segundoIndice !is Valor.Texto) {
+                                throw RuntimeException("Chave para acessar campo de objeto deve ser texto")
+                            }
+                            return primeiroElemento.campos[segundoIndice.valor] ?: Valor.Nulo
+                        }
+
+                        else -> {
+                            throw RuntimeException("Elemento com chave $chave não suporta acesso indexado")
+                        }
+                    }
+                }
+
                 return container.elementos[chave] ?: Valor.Nulo
             }
 
