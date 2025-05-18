@@ -357,14 +357,12 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
 
     override fun visitExpressao(ctx: ExpressaoContext): Valor = visit(ctx.getChild(0))
     override fun visitAtribuicao(ctx: AtribuicaoContext): Valor {
-        // Se for uma expressão lógica
         if (ctx.logicaOu() != null) {
             return visit(ctx.logicaOu())
         }
 
         val valor = visit(ctx.expressao())
 
-        // Se for uma atribuição a variável
         if (ctx.ID() != null) {
             val nome = ctx.ID().text
             val valor = visit(ctx.expressao())
@@ -372,7 +370,6 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
             return valor
         }
 
-        // Se for uma atribuição a acesso de propriedade (obj.prop)
         if (ctx.acesso() != null) {
             val acesso = ctx.acesso()
             val objeto = visit(acesso.primario())
@@ -837,7 +834,6 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
 
 
     override fun visitChamada(ctx: ChamadaContext): Valor {
-        // Se for acesso de array
         if (ctx.acessoArray() != null) {
             return visit(ctx.acessoArray())
         }
