@@ -1,7 +1,6 @@
 package org.gustavolyra.portugolpp
 
 import org.gustavolyra.portugolpp.PortugolPPParser.*
-import java.util.*
 
 
 @Suppress("REDUNDANT_OVERRIDE", "ABSTRACT_MEMBER_NOT_IMPLEMENTED")
@@ -11,49 +10,152 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
     private var funcaoAtual: Valor.Funcao? = null
 
     init {
-        global.definir("escrever", Valor.Funcao("escrever", null) { args ->
-            val valores = args.map { extrairValorParaImpressao(it) }
-            println(valores.joinToString(" "))
-            Valor.Nulo
+        // Mantenha suas funções existentes (escrever, imprimir, ler)
+
+        // Adicione estas funções nativas para manipular listas e mapas
+        global.definir("tamanho", Valor.Funcao("tamanho", null) { args ->
+            if (args.isEmpty()) {
+                throw RuntimeException("Função tamanho requer um argumento (lista, mapa ou texto)")
+            }
+
+            when (val arg = args[0]) {
+                is Valor.Lista -> Valor.Inteiro(arg.elementos.size)
+                is Valor.Mapa -> Valor.Inteiro(arg.elementos.size)
+                is Valor.Texto -> Valor.Inteiro(arg.valor.length)
+                else -> throw RuntimeException("Função tamanho só funciona com listas, mapas ou textos")
+            }
         })
 
-        global.definir("imprimir", Valor.Funcao("imprimir", null) { args ->
-            val valores = args.map { extrairValorParaImpressao(it) }
-            println(valores.joinToString(" "))
-            Valor.Nulo
+        global.definir("adicionar", Valor.Funcao("adicionar", null) { args ->
+            if (args.size < 2) {
+                throw RuntimeException("Função adicionar requer pelo menos 2 argumentos: lista e elemento")
+            }
+
+            val lista = args[0]
+            if (lista !is Valor.Lista) {
+                throw RuntimeException("Primeiro argumento deve ser uma lista")
+            }
+
+            for (i in 1 until args.size) {
+                lista.elementos.add(args[i])
+            }
+
+            return@Funcao lista
         })
 
-        global.definir("ler", Valor.Funcao("ler", null) { args ->
-            Scanner(System.`in`).nextLine().let { Valor.Texto(it) }
+        global.definir("remover", Valor.Funcao("remover", null) { args ->
+            if (args.size != 2) {
+                throw RuntimeException("Função remover requer 2 argumentos: lista e índice")
+            }
+
+            val lista = args[0]
+            val indice = args[1]
+
+            if (lista !is Valor.Lista) {
+                throw RuntimeException("Primeiro argumento deve ser uma lista")
+            }
+
+            if (indice !is Valor.Inteiro) {
+                throw RuntimeException("Segundo argumento deve ser um número inteiro")
+            }
+
+            if (indice.valor < 0 || indice.valor >= lista.elementos.size) {
+                throw RuntimeException("Índice fora dos limites da lista: ${indice.valor}")
+            }
+
+            val elementoRemovido = lista.elementos.removeAt(indice.valor)
+            return@Funcao elementoRemovido
+        })
+
+        global.definir("chaves", Valor.Funcao("chaves", null) { args ->
+            if (args.isEmpty()) {
+                throw RuntimeException("Função chaves requer um argumento (mapa)")
+            }
+
+            val mapa = args[0]
+            if (mapa !is Valor.Mapa) {
+                throw RuntimeException("Argumento deve ser um mapa")
+            }
+
+            val chaves = Valor.Lista(mapa.elementos.keys.toMutableList())
+            return@Funcao chaves
+        })
+
+        global.definir("valores", Valor.Funcao("valores", null) { args ->
+            if (args.isEmpty()) {
+                throw RuntimeException("Função valores requer um argumento (mapa)")
+            }
+
+            val mapa = args[0]
+            if (mapa !is Valor.Mapa) {
+                throw RuntimeException("Argumento deve ser um mapa")
+            }
+
+            val valores = Valor.Lista(mapa.elementos.values.toMutableList())
+            return@Funcao valores
+        })
+
+        global.definir("contemChave", Valor.Funcao("contemChave", null) { args ->
+            if (args.size != 2) {
+                throw RuntimeException("Função contemChave requer 2 argumentos: mapa e chave")
+            }
+
+            val mapa = args[0]
+            val chave = args[1]
+
+            if (mapa !is Valor.Mapa) {
+                throw RuntimeException("Primeiro argumento deve ser um mapa")
+            }
+
+            return@Funcao Valor.Logico(mapa.elementos.containsKey(chave))
         })
     }
 
+
     private fun extrairValorParaImpressao(valor: Valor): String {
         return when (valor) {
-            is Valor.Texto -> valor.valor
+            is Valor.Lista -> {
+                val elementos = valor.elementos.map { extrairValorParaImpressao(it) }
+                "[${elementos.joinToString(", ")}]"
+            }
+            is Valor.Mapa -> {
+                val entradas = valor.elementos.map { (chave, valor) ->
+                    "${extrairValorParaImpressao(chave)}: ${extrairValorParaImpressao(valor)}"
+                }
+                "[[${entradas.joinToString(", ")}]]"
+            }
+            is Valor.Texto -> "\"${valor.valor}\""
             is Valor.Inteiro -> valor.valor.toString()
             is Valor.Real -> valor.valor.toString()
             is Valor.Logico -> if (valor.valor) "verdadeiro" else "falso"
             is Valor.Objeto -> "[Objeto ${valor.klass}]"
             is Valor.Funcao -> "[função ${valor.nome}]"
             Valor.Nulo -> "nulo"
-            is Valor.Interface -> "[Interface]"
             else -> valor.toString()
         }
     }
+
+
 
     private fun extrairValorString(valor: Valor): String {
         return when (valor) {
             is Valor.Texto -> valor.valor
-            is Valor.Inteiro -> valor.valor.toString()
-            is Valor.Real -> valor.valor.toString()
-            is Valor.Logico -> if (valor.valor) "verdadeiro" else "falso"
-            is Valor.Objeto -> "[Objeto ${valor.klass}]"
-            is Valor.Funcao -> "[função ${valor.nome}]"
-            Valor.Nulo -> "nulo"
+            is Valor.Lista -> {
+                val elementos = valor.elementos.map { extrairValorString(it) }
+                "[${elementos.joinToString(", ")}]"
+            }
+
+            is Valor.Mapa -> {
+                val entradas = valor.elementos.map { (chave, valor) ->
+                    "${extrairValorString(chave)}: ${extrairValorString(valor)}"
+                }
+                "[[${entradas.joinToString(", ")}]]"
+            }
+
             else -> valor.toString()
         }
     }
+
 
     fun interpretar(tree: ProgramaContext) {
         try {
@@ -239,35 +341,107 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
         return Valor.Nulo
     }
 
+
     override fun visitExpressao(ctx: ExpressaoContext): Valor = visit(ctx.getChild(0))
     override fun visitAtribuicao(ctx: AtribuicaoContext): Valor {
-        val valor = ctx.expressao()?.let { visit(it) } ?: return visit(ctx.getChild(0))
+        // Se for uma atribuição regular (a uma variável)
+        if (ctx.ID() != null) {
+            val nome = ctx.ID().text
+            val valor = visit(ctx.expressao())
+            ambiente.atualizarOuDefinir(nome, valor)
+            return valor
+        }
 
-        return when {
-            ctx.ID() != null -> {
-                val nome = ctx.ID().text
-                ambiente.atualizarOuDefinir(nome, valor)
-                valor
+        // Se for uma atribuição a acesso de propriedade (obj.prop)
+        if (ctx.acesso() != null) {
+            val acesso = ctx.acesso()
+            val objeto = visit(acesso.primario())
+
+            if (objeto !is Valor.Objeto) {
+                throw RuntimeException("Não é possível atribuir a uma propriedade de um não-objeto")
             }
 
-            ctx.acesso() != null -> {
-                val acesso = ctx.acesso()
+            val nomeCampo = acesso.ID().text
+            val valorCampo = visit(ctx.expressao())
 
-                val objeto = visit(acesso.primario())
-                if (objeto !is Valor.Objeto) {
-                    throw RuntimeException("Atribuição em não-objeto")
+            objeto.campos[nomeCampo] = valorCampo
+            return valorCampo
+        }
+
+        // Se for uma atribuição a um elemento de array ou mapa
+        if (ctx.acessoArray() != null) {
+            val acessoArray = ctx.acessoArray()
+            val container = visit(acessoArray.primario())
+            val valor = visit(ctx.expressao())
+
+            when (container) {
+                is Valor.Lista -> {
+                    val indice = visit(acessoArray.expressao(0))
+
+                    if (indice !is Valor.Inteiro) {
+                        throw RuntimeException("Índice de lista deve ser um número inteiro")
+                    }
+
+                    // Verificamos se o índice está dentro dos limites da lista
+                    // Se o índice for igual ao tamanho da lista, adicionamos um novo elemento
+                    if (indice.valor < 0) {
+                        throw RuntimeException("Índice negativo não permitido: ${indice.valor}")
+                    }
+
+                    // Expansão automática da lista, se necessário
+                    while (indice.valor >= container.elementos.size) {
+                        container.elementos.add(Valor.Nulo)
+                    }
+
+                    // Se for um acesso bidimensional (matriz)
+                    if (acessoArray.expressao().size > 1) {
+                        val elemento = container.elementos[indice.valor]
+
+                        // Se não for uma lista, convertemos para lista
+                        if (elemento !is Valor.Lista) {
+                            container.elementos[indice.valor] = Valor.Lista(mutableListOf())
+                        }
+
+                        val lista = container.elementos[indice.valor] as Valor.Lista
+                        val segundoIndice = visit(acessoArray.expressao(1))
+
+                        if (segundoIndice !is Valor.Inteiro) {
+                            throw RuntimeException("Segundo índice deve ser um número inteiro")
+                        }
+
+                        if (segundoIndice.valor < 0) {
+                            throw RuntimeException("Segundo índice negativo não permitido: ${segundoIndice.valor}")
+                        }
+
+                        // Expansão automática da sublista, se necessário
+                        while (segundoIndice.valor >= lista.elementos.size) {
+                            lista.elementos.add(Valor.Nulo)
+                        }
+
+                        lista.elementos[segundoIndice.valor] = valor
+                    } else {
+                        container.elementos[indice.valor] = valor
+                    }
                 }
 
-                val propriedade = acesso.ID().text
-                objeto.campos[propriedade] = valor
-                valor
+                is Valor.Mapa -> {
+                    val chave = visit(acessoArray.expressao(0))
+                    container.elementos[chave] = valor
+                }
+
+                else -> {
+                    throw RuntimeException("Operação de atribuição com índice não suportada para ${container.javaClass.simpleName}")
+                }
             }
 
-            else -> {
-                visit(ctx.getChild(0))
-            }
+            return valor
         }
+
+        // Se não for nenhum dos casos acima, é uma expressão regular
+        return visit(ctx.logicaOu())
     }
+
+
 
     override fun visitAcesso(ctx: AcessoContext): Valor {
         val objeto = visit(ctx.primario())
@@ -857,6 +1031,65 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
         throw BreakException()
     }
 
+    override fun visitListaLiteral(ctx: ListaLiteralContext): Valor {
+        return Valor.Lista(mutableListOf())
+    }
+
+
+    override fun visitMapaLiteral(ctx: MapaLiteralContext): Valor {
+        return Valor.Mapa(mutableMapOf())
+    }
+
+
+    override fun visitAcessoArray(ctx: AcessoArrayContext): Valor {
+        val primario = visit(ctx.primario())
+        val indice = visit(ctx.expressao(0))
+
+        when (primario) {
+            is Valor.Lista -> {
+                if (indice !is Valor.Inteiro) {
+                    throw RuntimeException("Índice de lista deve ser um número inteiro")
+                }
+
+                if (indice.valor < 0 || indice.valor >= primario.elementos.size) {
+                    throw RuntimeException("Índice fora dos limites da lista: ${indice.valor}")
+                }
+
+
+                if (ctx.expressao().size > 1) {
+                    val elemento = primario.elementos[indice.valor]
+                    if (elemento !is Valor.Lista) {
+                        throw RuntimeException("Elemento não é uma lista para acesso bidimensional")
+                    }
+
+                    val segundoIndice = visit(ctx.expressao(1))
+                    if (segundoIndice !is Valor.Inteiro) {
+                        throw RuntimeException("Segundo índice deve ser um número inteiro")
+                    }
+
+                    if (segundoIndice.valor < 0 || segundoIndice.valor >= elemento.elementos.size) {
+                        throw RuntimeException("Segundo índice fora dos limites: ${segundoIndice.valor}")
+                    }
+
+                    return elemento.elementos[segundoIndice.valor]
+                }
+
+                return primario.elementos[indice.valor]
+            }
+
+            is Valor.Mapa -> {
+                // Para mapas, usamos o valor como chave
+                val valor = primario.elementos[indice]
+                return valor ?: Valor.Nulo
+            }
+
+            else -> {
+                throw RuntimeException("Operação de acesso com índice não suportada para ${primario.javaClass.simpleName}")
+            }
+        }
+    }
+
+
     override fun visitDeclaracaoContinue(ctx: DeclaracaoContinueContext): Valor {
         throw ContinueException()
     }
@@ -1085,16 +1318,13 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
     private fun inicializarCamposDaClasseBase(objeto: Valor.Objeto, nomeClasseBase: String) {
         val classeBase = global.obterClasse(nomeClasseBase) ?: return
 
-        // Inicializar campos da superclasse da classe base, se existir
         val superClasseDaBase = global.getSuperClasse(classeBase)
         if (superClasseDaBase != null) {
             inicializarCamposDaClasseBase(objeto, superClasseDaBase)
         }
 
-        // Inicializar campos da classe base
         classeBase.declaracaoVar().forEach { decl ->
             val nomeCampo = decl.ID().text
-            // Só inicializa se o campo não já foi definido por uma subclasse
             if (!objeto.campos.containsKey(nomeCampo)) {
                 val oldAmbiente = ambiente
                 ambiente = Ambiente(global).apply { thisObjeto = objeto }
@@ -1115,12 +1345,10 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
         // Criar o objeto
         val objeto = Valor.Objeto(nomeClasse, mutableMapOf(), superClasse, interfaces)
 
-        // Inicializar campos da superclasse, se existir
         if (superClasse != null) {
             inicializarCamposDaClasseBase(objeto, superClasse)
         }
 
-        // Inicializar campos da classe atual
         classe.declaracaoVar().forEach { decl ->
             val nomeCampo = decl.ID().text
             val oldAmbiente = ambiente

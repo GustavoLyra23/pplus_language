@@ -167,7 +167,7 @@ primario
     ;
 
 listaLiteral
-    : '[' (expressao (',' expressao)*)? ']'
+    : '[' ']'
     ;
 
 mapaLiteral
