@@ -17,7 +17,6 @@ fun modoInterativo() {
     println("Portugol++ CLI - Modo Interativo")
     println("Digite 'exit' para sair")
     println("Digite 'run <caminho>' para executar um arquivo")
-
     while (true) {
         print("> ")
         val input = readlnOrNull()?.trim() ?: continue
@@ -27,7 +26,6 @@ fun modoInterativo() {
                 val caminho = input.substring(4)
                 executarArquivo(caminho)
             }
-
             else -> println("Comando não reconhecido. Digite 'run <caminho>' ou 'exit'.")
         }
     }

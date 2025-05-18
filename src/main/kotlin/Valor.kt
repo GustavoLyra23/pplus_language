@@ -27,13 +27,12 @@ sealed class Valor {
     override fun toString(): String = when (this) {
         is Inteiro -> valor.toString()
         is Real -> valor.toString()
-        is Texto -> valor
+        is Texto -> valor // Aqui a mudança mais importante: retornar apenas o valor interno
         is Logico -> if (valor) "verdadeiro" else "falso"
         is Objeto -> "[Objeto $klass]"
         is Funcao -> "[função $nome]"
         Nulo -> "nulo"
-        is Interface -> "[Interface $nome]"
-        is Lista -> "[${elementos.joinToString(", ")}]"
-        is Mapa -> "Mapa[${elementos.size} elementos]"
+        is Interface -> "[Interface]"
+        else -> super.toString()
     }
 }

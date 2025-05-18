@@ -12,17 +12,47 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
 
     init {
         global.definir("escrever", Valor.Funcao("escrever", null) { args ->
-            println(args.joinToString(" "))
+            val valores = args.map { extrairValorParaImpressao(it) }
+            println(valores.joinToString(" "))
             Valor.Nulo
         })
 
         global.definir("imprimir", Valor.Funcao("imprimir", null) { args ->
-            println(args.joinToString(" "))
+            val valores = args.map { extrairValorParaImpressao(it) }
+            println(valores.joinToString(" "))
             Valor.Nulo
         })
+
         global.definir("ler", Valor.Funcao("ler", null) { args ->
             Scanner(System.`in`).nextLine().let { Valor.Texto(it) }
         })
+    }
+
+    private fun extrairValorParaImpressao(valor: Valor): String {
+        return when (valor) {
+            is Valor.Texto -> valor.valor
+            is Valor.Inteiro -> valor.valor.toString()
+            is Valor.Real -> valor.valor.toString()
+            is Valor.Logico -> if (valor.valor) "verdadeiro" else "falso"
+            is Valor.Objeto -> "[Objeto ${valor.klass}]"
+            is Valor.Funcao -> "[função ${valor.nome}]"
+            Valor.Nulo -> "nulo"
+            is Valor.Interface -> "[Interface]"
+            else -> valor.toString()
+        }
+    }
+
+    private fun extrairValorString(valor: Valor): String {
+        return when (valor) {
+            is Valor.Texto -> valor.valor
+            is Valor.Inteiro -> valor.valor.toString()
+            is Valor.Real -> valor.valor.toString()
+            is Valor.Logico -> if (valor.valor) "verdadeiro" else "falso"
+            is Valor.Objeto -> "[Objeto ${valor.klass}]"
+            is Valor.Funcao -> "[função ${valor.nome}]"
+            Valor.Nulo -> "nulo"
+            else -> valor.toString()
+        }
     }
 
     fun interpretar(tree: ProgramaContext) {
@@ -116,7 +146,7 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
         if (tipo != null) {
             if (valor is Valor.Objeto) {
                 val nomeClasse = valor.klass
-                if (tipo != nomeClasse) {
+                if (tipo != nomeClasse && valor.superClasse != tipo) {
                     throw RuntimeException("Tipo de variável '$nome' não corresponde ao tipo do objeto '$nomeClasse'")
                 }
             } else {
@@ -210,7 +240,6 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
     }
 
     override fun visitExpressao(ctx: ExpressaoContext): Valor = visit(ctx.getChild(0))
-
     override fun visitAtribuicao(ctx: AtribuicaoContext): Valor {
         val valor = ctx.expressao()?.let { visit(it) } ?: return visit(ctx.getChild(0))
 
@@ -280,35 +309,58 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
 
     override fun visitIgualdade(ctx: IgualdadeContext): Valor {
         var esquerda = visit(ctx.comparacao(0))
+
         for (i in 1 until ctx.comparacao().size) {
             val operador = ctx.getChild(i * 2 - 1).text
             val direita = visit(ctx.comparacao(i))
-            esquerda = when (operador) {
-                "==" -> when {
-                    esquerda is Valor.Inteiro && direita is Valor.Inteiro -> Valor.Logico(esquerda.valor == direita.valor)
-                    esquerda is Valor.Real && direita is Valor.Real -> Valor.Logico(esquerda.valor == direita.valor)
-                    esquerda is Valor.Real && direita is Valor.Inteiro -> Valor.Logico(esquerda.valor == direita.valor.toDouble())
-                    esquerda is Valor.Inteiro && direita is Valor.Real -> Valor.Logico(esquerda.valor.toDouble() == direita.valor)
-                    esquerda is Valor.Texto && direita is Valor.Texto -> Valor.Logico(esquerda.valor == direita.valor)
-                    esquerda is Valor.Logico && direita is Valor.Logico -> Valor.Logico(esquerda.valor == direita.valor)
-                    else -> Valor.Logico(false)
-                }
 
-                "!=" -> when {
-                    esquerda is Valor.Inteiro && direita is Valor.Inteiro -> Valor.Logico(esquerda.valor != direita.valor)
-                    esquerda is Valor.Real && direita is Valor.Real -> Valor.Logico(esquerda.valor != direita.valor)
-                    esquerda is Valor.Real && direita is Valor.Inteiro -> Valor.Logico(esquerda.valor != direita.valor.toDouble())
-                    esquerda is Valor.Inteiro && direita is Valor.Real -> Valor.Logico(esquerda.valor.toDouble() != direita.valor)
-                    esquerda is Valor.Texto && direita is Valor.Texto -> Valor.Logico(esquerda.valor != direita.valor)
-                    esquerda is Valor.Logico && direita is Valor.Logico -> Valor.Logico(esquerda.valor != direita.valor)
-                    else -> Valor.Logico(true)
+            if (operador == "==") {
+                val resultado = when {
+                    esquerda == Valor.Nulo && direita == Valor.Nulo -> true
+                    esquerda == Valor.Nulo || direita == Valor.Nulo -> false
+                    else -> saoIguais(esquerda, direita)
                 }
-
-                else -> throw RuntimeException("Operador desconhecido: $operador")
+                esquerda = Valor.Logico(resultado)
+            } else if (operador == "!=") {
+                val resultado = when {
+                    esquerda == Valor.Nulo && direita == Valor.Nulo -> false
+                    esquerda == Valor.Nulo || direita == Valor.Nulo -> true
+                    else -> !saoIguais(esquerda, direita)
+                }
+                esquerda = Valor.Logico(resultado)
             }
         }
+
         return esquerda
     }
+
+    private fun saoIguais(esquerda: Valor, direita: Valor): Boolean {
+        return when {
+            esquerda is Valor.Inteiro && direita is Valor.Inteiro ->
+                esquerda.valor == direita.valor
+
+            esquerda is Valor.Real && direita is Valor.Real ->
+                esquerda.valor == direita.valor
+
+            esquerda is Valor.Real && direita is Valor.Inteiro ->
+                esquerda.valor == direita.valor.toDouble()
+
+            esquerda is Valor.Inteiro && direita is Valor.Real ->
+                esquerda.valor.toDouble() == direita.valor
+
+            esquerda is Valor.Texto && direita is Valor.Texto ->
+                esquerda.valor == direita.valor
+
+            esquerda is Valor.Logico && direita is Valor.Logico ->
+                esquerda.valor == direita.valor
+
+            esquerda is Valor.Objeto && direita is Valor.Objeto ->
+                esquerda === direita
+
+            else -> false
+        }
+    }
+
 
     override fun visitComparacao(ctx: ComparacaoContext): Valor {
         var esquerda = visit(ctx.adicao(0))
@@ -391,12 +443,11 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
 
             esquerda = when (operador) {
                 "+" -> when {
-
                     esquerda is Valor.Texto || direita is Valor.Texto -> {
-                        val resultado = Valor.Texto(esquerda.toString() + direita.toString())
-                        resultado
+                        val esquerdaStr = extrairValorString(esquerda)
+                        val direitaStr = extrairValorString(direita)
+                        Valor.Texto(esquerdaStr + direitaStr)
                     }
-
 
                     esquerda is Valor.Inteiro && direita is Valor.Inteiro -> {
                         val resultado = Valor.Inteiro(esquerda.valor + direita.valor)
@@ -457,6 +508,7 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
 
         return esquerda
     }
+
 
     override fun visitMultiplicacao(ctx: MultiplicacaoContext): Valor {
         var esquerda = visit(ctx.unario(0))
@@ -606,6 +658,11 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
         var i = 1
 
         while (i < ctx.childCount) {
+            // Se encontrar um valor nulo, encerrar imediatamente
+            if (resultado == Valor.Nulo) {
+                return Valor.Nulo
+            }
+
             if (ctx.getChild(i).text == ".") {
                 val id = ctx.getChild(i + 1).text
 
@@ -625,13 +682,14 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
                         i += 4
                     }
 
-                    // Buscar método na hierarquia de classes
-                    val metodo = buscarMetodoNaHierarquia(resultado, id) ?: throw RuntimeException("Método não encontrado: $id em classe ${resultado.klass}")
+                    val metodo = buscarMetodoNaHierarquia(resultado, id)
+                    if (metodo == null) {
+                        throw RuntimeException("Método não encontrado: $id em classe ${resultado.klass}")
+                    }
 
                     resultado = executarMetodo(resultado, metodo, args)
                 } else {
                     // Acesso a propriedade
-                    // Verificar no objeto atual e na hierarquia de classes
                     val campoValor = buscarPropriedadeNaHierarquia(resultado, id)
                     resultado = campoValor ?: Valor.Nulo
                     i += 2
@@ -643,6 +701,47 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
 
         return resultado
     }
+
+
+    override fun visitDeclaracaoEnquanto(ctx: DeclaracaoEnquantoContext): Valor {
+        var iteracoes = 0
+        val maxIteracoes = 100
+
+        while (iteracoes < maxIteracoes) {
+            val condicao = visit(ctx.expressao())
+            println("Condição do loop: $condicao")
+
+            if (condicao !is Valor.Logico) {
+                throw RuntimeException("Condição do 'enquanto' deve ser um valor lógico")
+            }
+
+            if (!condicao.valor) {
+                println("Condição falsa, saindo do loop")
+                break
+            }
+
+            iteracoes++
+            println("Iteração $iteracoes do loop")
+
+            try {
+                visit(ctx.declaracao())
+            } catch (e: RetornoException) {
+                throw e
+            } catch (e: BreakException) {
+                break
+            } catch (e: ContinueException) {
+                continue
+            }
+        }
+
+        if (iteracoes >= maxIteracoes) {
+            println("Aviso: Loop infinito detectado! Saindo do loop.")
+            return Valor.Nulo
+        }
+
+        return Valor.Nulo
+    }
+
 
     fun verificarImplementacaoInterface(classeContext: DeclaracaoClasseContext, nomeInterface: String): Boolean {
         val interfaceContext = global.obterInterface(nomeInterface) ?: return false
@@ -710,7 +809,6 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
         return Valor.Nulo
     }
 
-
     override fun visitDeclaracaoFacaEnquanto(ctx: DeclaracaoFacaEnquantoContext): Valor {
         do {
             try {
@@ -753,47 +851,6 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
         throw ContinueException()
     }
 
-
-    override fun visitDeclaracaoEnquanto(ctx: DeclaracaoEnquantoContext): Valor {
-        var iteracoes = 0
-        val maxIteracoes = 100
-
-        while (iteracoes < maxIteracoes) {
-            val condicao = visit(ctx.expressao())
-            println("Condição do loop: $condicao")
-
-            if (condicao !is Valor.Logico) {
-                throw RuntimeException("Condição do 'enquanto' deve ser um valor lógico")
-            }
-
-            if (!condicao.valor) {
-                println("Condição falsa, saindo do loop")
-                break
-            }
-
-            iteracoes++
-            println("Iteração $iteracoes do loop")
-
-            try {
-                visit(ctx.declaracao())
-            } catch (e: RetornoException) {
-                throw e
-            } catch (e: BreakException) {
-                break
-            } catch (e: ContinueException) {
-                continue
-            }
-        }
-
-        if (iteracoes >= maxIteracoes) {
-            println("Aviso: Loop infinito detectado! Saindo do loop.")
-            return Valor.Nulo
-        }
-
-        return Valor.Nulo
-    }
-
-
     override fun visitChamadaFuncao(ctx: ChamadaFuncaoContext): Valor {
         val argumentos = ctx.argumentos()?.expressao()?.map { visit(it) } ?: emptyList()
 
@@ -815,6 +872,15 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
             chamadaFuncao(funcaoNome, argumentos)
         }
     }
+
+    private fun isCondicaoVerdadeira(condicao: Valor): Boolean {
+        return when (condicao) {
+            is Valor.Logico -> condicao.valor
+            Valor.Nulo -> false // Considerar nulo como falso
+            else -> throw RuntimeException("Expressão de condição deve resultar em tipo Lógico, mas recebeu ${condicao::class.simpleName}")
+        }
+    }
+
 
     private fun chamadaFuncao(nome: String, argumentos: List<Valor>): Valor {
         val funcao = try {
@@ -970,7 +1036,6 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
     }
 
     private fun avaliarArgumento(arg: String): Valor {
-        // Implementação simplificada para converter string de argumento em Valor
         return when {
             arg.startsWith("\"") && arg.endsWith("\"") -> Valor.Texto(arg.substring(1, arg.length - 1))
             arg == "verdadeiro" -> Valor.Logico(true)
@@ -987,22 +1052,17 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
                 Valor.Nulo
             }
 
-            else -> ambiente.obter(arg) // Tenta recuperar uma variável
+            else -> ambiente.obter(arg)
         }
     }
 
     private fun extrairArgumentosDoConstructor(ctx: PrimarioContext): List<Valor> {
         val args = mutableListOf<Valor>()
-
-        // Localizar os argumentos entre parênteses na chamada do construtor
         if (ctx.getChildCount() > 2 && ctx.getChild(ctx.getChildCount() - 2).text == "(") {
             val argText = ctx.getChild(ctx.getChildCount() - 1).text
             if (argText != ")" && argText.isNotEmpty()) {
-                // Extrair e avaliar cada argumento
                 val argumentos = argText.split(",")
                 for (arg in argumentos) {
-                    // Esta é uma versão simplificada - numa implementação real
-                    // você precisaria de um parser mais robusto para os argumentos
                     val valor = avaliarArgumento(arg.trim())
                     args.add(valor)
                 }

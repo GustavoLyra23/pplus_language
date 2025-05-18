@@ -81,15 +81,13 @@ class Ambiente(val enclosing: Ambiente? = null) {
             }
         }
 
-        if (classes.containsKey(nome)) {
-        }
-
         val externoValor = enclosing?.obter(nome)
-        if (externoValor != Valor.Nulo) {
-            return externoValor as Valor
+        if (externoValor != null && externoValor != Valor.Nulo) {
+            return externoValor
         }
         return Valor.Nulo
     }
+
 
     fun definirClasse(nome: String, declaracao: DeclaracaoClasseContext) {
         classes[nome] = declaracao
