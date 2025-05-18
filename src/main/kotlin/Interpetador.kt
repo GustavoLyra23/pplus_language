@@ -801,7 +801,17 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
             } catch (e: BreakException) {
                 break
             } catch (e: ContinueException) {
-                continue
+                val condicao = visit(ctx.expressao(0))
+
+                if (condicao !is Valor.Logico) {
+                    throw RuntimeException("Condição do 'para' deve ser um valor lógico")
+                }
+                if (!condicao.valor) {
+                    break
+                } else {
+                    visit(ctx.expressao(1))
+                    continue
+                }
             }
             visit(ctx.expressao(1))
         }
