@@ -1,6 +1,7 @@
 package org.gustavolyra.portugolpp
 
 import org.gustavolyra.portugolpp.PortugolPPParser.*
+import java.util.*
 
 
 @Suppress("REDUNDANT_OVERRIDE", "ABSTRACT_MEMBER_NOT_IMPLEMENTED")
@@ -10,9 +11,22 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
     private var funcaoAtual: Valor.Funcao? = null
 
     init {
-        // Mantenha suas funções existentes (escrever, imprimir, ler)
+        global.definir("escrever", Valor.Funcao("escrever", null) { args ->
+            val valores = args.map { extrairValorParaImpressao(it) }
+            println(valores.joinToString(" "))
+            Valor.Nulo
+        })
 
-        // Adicione estas funções nativas para manipular listas e mapas
+        global.definir("imprimir", Valor.Funcao("imprimir", null) { args ->
+            val valores = args.map { extrairValorParaImpressao(it) }
+            println(valores.joinToString(" "))
+            Valor.Nulo
+        })
+
+        global.definir("ler", Valor.Funcao("ler", null) { args ->
+            Scanner(System.`in`).nextLine().let { Valor.Texto(it) }
+        })
+
         global.definir("tamanho", Valor.Funcao("tamanho", null) { args ->
             if (args.isEmpty()) {
                 throw RuntimeException("Função tamanho requer um argumento (lista, mapa ou texto)")
@@ -40,7 +54,7 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
                 lista.elementos.add(args[i])
             }
 
-            return@Funcao lista
+            lista
         })
 
         global.definir("remover", Valor.Funcao("remover", null) { args ->
@@ -63,8 +77,7 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
                 throw RuntimeException("Índice fora dos limites da lista: ${indice.valor}")
             }
 
-            val elementoRemovido = lista.elementos.removeAt(indice.valor)
-            return@Funcao elementoRemovido
+            lista.elementos.removeAt(indice.valor)
         })
 
         global.definir("chaves", Valor.Funcao("chaves", null) { args ->
@@ -77,8 +90,7 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
                 throw RuntimeException("Argumento deve ser um mapa")
             }
 
-            val chaves = Valor.Lista(mapa.elementos.keys.toMutableList())
-            return@Funcao chaves
+            Valor.Lista(mapa.elementos.keys.toMutableList())
         })
 
         global.definir("valores", Valor.Funcao("valores", null) { args ->
@@ -91,8 +103,7 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
                 throw RuntimeException("Argumento deve ser um mapa")
             }
 
-            val valores = Valor.Lista(mapa.elementos.values.toMutableList())
-            return@Funcao valores
+            Valor.Lista(mapa.elementos.values.toMutableList())
         })
 
         global.definir("contemChave", Valor.Funcao("contemChave", null) { args ->
@@ -107,7 +118,7 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
                 throw RuntimeException("Primeiro argumento deve ser um mapa")
             }
 
-            return@Funcao Valor.Logico(mapa.elementos.containsKey(chave))
+            Valor.Logico(mapa.elementos.containsKey(chave))
         })
     }
 
@@ -118,12 +129,14 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
                 val elementos = valor.elementos.map { extrairValorParaImpressao(it) }
                 "[${elementos.joinToString(", ")}]"
             }
+
             is Valor.Mapa -> {
                 val entradas = valor.elementos.map { (chave, valor) ->
                     "${extrairValorParaImpressao(chave)}: ${extrairValorParaImpressao(valor)}"
                 }
                 "[[${entradas.joinToString(", ")}]]"
             }
+
             is Valor.Texto -> "\"${valor.valor}\""
             is Valor.Inteiro -> valor.valor.toString()
             is Valor.Real -> valor.valor.toString()
@@ -134,7 +147,6 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
             else -> valor.toString()
         }
     }
-
 
 
     private fun extrairValorString(valor: Valor): String {
@@ -271,6 +283,7 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
         return Valor.Nulo
     }
 
+
     private fun isValidType(tipo: String?): Boolean {
         if (tipo == null) return true
         return tipo in listOf("Inteiro", "Real", "Texto", "Logico", "Nulo") || global.obterClasse(tipo) != null
@@ -344,7 +357,14 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
 
     override fun visitExpressao(ctx: ExpressaoContext): Valor = visit(ctx.getChild(0))
     override fun visitAtribuicao(ctx: AtribuicaoContext): Valor {
-        // Se for uma atribuição regular (a uma variável)
+        // Se for uma expressão lógica
+        if (ctx.logicaOu() != null) {
+            return visit(ctx.logicaOu())
+        }
+
+        val valor = visit(ctx.expressao())
+
+        // Se for uma atribuição a variável
         if (ctx.ID() != null) {
             val nome = ctx.ID().text
             val valor = visit(ctx.expressao())
@@ -368,7 +388,7 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
             return valorCampo
         }
 
-        // Se for uma atribuição a um elemento de array ou mapa
+        // Se for uma atribuição a um elemento de array
         if (ctx.acessoArray() != null) {
             val acessoArray = ctx.acessoArray()
             val container = visit(acessoArray.primario())
@@ -382,22 +402,20 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
                         throw RuntimeException("Índice de lista deve ser um número inteiro")
                     }
 
-                    // Verificamos se o índice está dentro dos limites da lista
-                    // Se o índice for igual ao tamanho da lista, adicionamos um novo elemento
                     if (indice.valor < 0) {
                         throw RuntimeException("Índice negativo não permitido: ${indice.valor}")
                     }
 
-                    // Expansão automática da lista, se necessário
+                    // Expande a lista se necessário
                     while (indice.valor >= container.elementos.size) {
                         container.elementos.add(Valor.Nulo)
                     }
 
-                    // Se for um acesso bidimensional (matriz)
+                    // Para acesso bidimensional
                     if (acessoArray.expressao().size > 1) {
                         val elemento = container.elementos[indice.valor]
 
-                        // Se não for uma lista, convertemos para lista
+                        // Se o elemento não for uma lista, cria uma
                         if (elemento !is Valor.Lista) {
                             container.elementos[indice.valor] = Valor.Lista(mutableListOf())
                         }
@@ -413,7 +431,7 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
                             throw RuntimeException("Segundo índice negativo não permitido: ${segundoIndice.valor}")
                         }
 
-                        // Expansão automática da sublista, se necessário
+                        // Expande a sublista se necessário
                         while (segundoIndice.valor >= lista.elementos.size) {
                             lista.elementos.add(Valor.Nulo)
                         }
@@ -430,17 +448,15 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
                 }
 
                 else -> {
-                    throw RuntimeException("Operação de atribuição com índice não suportada para ${container.javaClass.simpleName}")
+                    throw RuntimeException("Operação de atribuição com índice não suportada para ${container::class.simpleName}")
                 }
             }
 
             return valor
         }
 
-        // Se não for nenhum dos casos acima, é uma expressão regular
-        return visit(ctx.logicaOu())
+        throw RuntimeException("Erro de sintaxe na atribuição")
     }
-
 
 
     override fun visitAcesso(ctx: AcessoContext): Valor {
@@ -756,15 +772,12 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
     }
 
     private fun buscarPropriedadeNaHierarquia(objeto: Valor.Objeto, nomeCampo: String): Valor? {
-        // Verificar nos campos do objeto
         val valorCampo = objeto.campos[nomeCampo]
         if (valorCampo != null) {
             return valorCampo
         }
 
-        // Verificar na superclasse, se existir
         if (objeto.superClasse != null) {
-            // Criar um objeto temporário da superclasse para acessar seus campos
             val tempObjeto = criarObjetoTemporarioDaClasse(objeto.superClasse)
             return buscarPropriedadeNaHierarquia(tempObjeto, nomeCampo)
         }
@@ -780,7 +793,6 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
 
         val objeto = Valor.Objeto(nomeClasse, mutableMapOf(), superClasse, interfaces)
 
-        // Inicializar apenas os campos (sem chamar métodos)
         classe.declaracaoVar().forEach { decl ->
             val nomeCampo = decl.ID().text
             val valor = decl.expressao()?.let {
@@ -798,7 +810,6 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
     }
 
     private fun buscarMetodoNaHierarquia(objeto: Valor.Objeto, nomeMetodo: String): DeclaracaoFuncaoContext? {
-        // Buscar na classe do objeto
         val classe = global.obterClasse(objeto.klass) ?: return null
         val metodo = classe.declaracaoFuncao().find { it.ID().text == nomeMetodo }
 
@@ -806,7 +817,6 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
             return metodo
         }
 
-        // Buscar na superclasse, se existir
         if (objeto.superClasse != null) {
             val classeBase = global.obterClasse(objeto.superClasse) ?: return null
             val metodoBase = classeBase.declaracaoFuncao().find { it.ID().text == nomeMetodo }
@@ -815,7 +825,6 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
                 return metodoBase
             }
 
-            // Continuar buscando recursivamente na hierarquia
             val superClasseDaBase = global.getSuperClasse(classeBase)
             if (superClasseDaBase != null) {
                 val objetoBase = Valor.Objeto(objeto.superClasse, mutableMapOf(), superClasseDaBase)
@@ -828,11 +837,15 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
 
 
     override fun visitChamada(ctx: ChamadaContext): Valor {
+        // Se for acesso de array
+        if (ctx.acessoArray() != null) {
+            return visit(ctx.acessoArray())
+        }
+
         var resultado = visit(ctx.primario())
         var i = 1
 
         while (i < ctx.childCount) {
-            // Se encontrar um valor nulo, encerrar imediatamente
             if (resultado == Valor.Nulo) {
                 return Valor.Nulo
             }
@@ -845,7 +858,6 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
                 }
 
                 if (i + 2 < ctx.childCount && ctx.getChild(i + 2).text == "(") {
-                    // Chamada de método
                     val args = mutableListOf<Valor>()
 
                     if (i + 3 < ctx.childCount && ctx.getChild(i + 3) is ArgumentosContext) {
@@ -863,7 +875,6 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
 
                     resultado = executarMetodo(resultado, metodo, args)
                 } else {
-                    // Acesso a propriedade
                     val campoValor = buscarPropriedadeNaHierarquia(resultado, id)
                     resultado = campoValor ?: Valor.Nulo
                     i += 2
@@ -920,15 +931,12 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
     fun verificarImplementacaoInterface(classeContext: DeclaracaoClasseContext, nomeInterface: String): Boolean {
         val interfaceContext = global.obterInterface(nomeInterface) ?: return false
 
-        // Para cada assinatura de método na interface
         for (assinatura in interfaceContext.assinaturaMetodo()) {
             val nomeMetodo = assinatura.ID().text
 
-            // Verificar se existe uma implementação na classe
             val implementado = classeContext.declaracaoFuncao().any { it.ID().text == nomeMetodo }
 
             if (!implementado) {
-                // Verificar se existe na superclasse, se houver
                 val superClasse = global.getSuperClasse(classeContext)
                 if (superClasse != null) {
                     val classeBase = global.obterClasse(superClasse)
@@ -1032,63 +1040,64 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
     }
 
     override fun visitListaLiteral(ctx: ListaLiteralContext): Valor {
-        return Valor.Lista(mutableListOf())
+        return Valor.Lista()
     }
 
 
     override fun visitMapaLiteral(ctx: MapaLiteralContext): Valor {
-        return Valor.Mapa(mutableMapOf())
+        return Valor.Mapa()
     }
 
 
     override fun visitAcessoArray(ctx: AcessoArrayContext): Valor {
-        val primario = visit(ctx.primario())
-        val indice = visit(ctx.expressao(0))
+        val container = visit(ctx.primario())
 
-        when (primario) {
+        when (container) {
             is Valor.Lista -> {
+                val indice = visit(ctx.expressao(0))
+
                 if (indice !is Valor.Inteiro) {
                     throw RuntimeException("Índice de lista deve ser um número inteiro")
                 }
 
-                if (indice.valor < 0 || indice.valor >= primario.elementos.size) {
+                if (indice.valor < 0 || indice.valor >= container.elementos.size) {
                     throw RuntimeException("Índice fora dos limites da lista: ${indice.valor}")
                 }
 
-
+                // Para acesso bidimensional
                 if (ctx.expressao().size > 1) {
-                    val elemento = primario.elementos[indice.valor]
+                    val elemento = container.elementos[indice.valor]
+
                     if (elemento !is Valor.Lista) {
-                        throw RuntimeException("Elemento não é uma lista para acesso bidimensional")
+                        throw RuntimeException("Elemento no índice ${indice.valor} não é uma lista")
                     }
 
                     val segundoIndice = visit(ctx.expressao(1))
+
                     if (segundoIndice !is Valor.Inteiro) {
                         throw RuntimeException("Segundo índice deve ser um número inteiro")
                     }
 
                     if (segundoIndice.valor < 0 || segundoIndice.valor >= elemento.elementos.size) {
-                        throw RuntimeException("Segundo índice fora dos limites: ${segundoIndice.valor}")
+                        throw RuntimeException("Segundo índice fora dos limites da lista: ${segundoIndice.valor}")
                     }
 
                     return elemento.elementos[segundoIndice.valor]
                 }
 
-                return primario.elementos[indice.valor]
+                return container.elementos[indice.valor]
             }
 
             is Valor.Mapa -> {
-                // Para mapas, usamos o valor como chave
-                val valor = primario.elementos[indice]
-                return valor ?: Valor.Nulo
+                val chave = visit(ctx.expressao(0))
+                return container.elementos[chave] ?: Valor.Nulo
             }
 
             else -> {
-                throw RuntimeException("Operação de acesso com índice não suportada para ${primario.javaClass.simpleName}")
+                throw RuntimeException("Operação de acesso com índice não suportada para ${container::class.simpleName}")
             }
         }
     }
-
 
     override fun visitDeclaracaoContinue(ctx: DeclaracaoContinueContext): Valor {
         throw ContinueException()
@@ -1119,7 +1128,7 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
     private fun isCondicaoVerdadeira(condicao: Valor): Boolean {
         return when (condicao) {
             is Valor.Logico -> condicao.valor
-            Valor.Nulo -> false // Considerar nulo como falso
+            Valor.Nulo -> false
             else -> throw RuntimeException("Expressão de condição deve resultar em tipo Lógico, mas recebeu ${condicao::class.simpleName}")
         }
     }
@@ -1231,6 +1240,8 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
 
     override fun visitPrimario(ctx: PrimarioContext): Valor {
         return when {
+            ctx.listaLiteral() != null -> visit(ctx.listaLiteral())
+            ctx.mapaLiteral() != null -> visit(ctx.mapaLiteral())
             ctx.NUMERO() != null -> ctx.NUMERO().text.let { if (it.contains(".")) Valor.Real(it.toDouble()) else Valor.Inteiro(it.toInt()) }
             ctx.TEXTO_LITERAL() != null -> Valor.Texto(ctx.TEXTO_LITERAL().text.removeSurrounding("\""))
             ctx.ID() != null && !ctx.text.startsWith("nova") -> {
@@ -1277,6 +1288,7 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
             }
         }
     }
+
 
     private fun avaliarArgumento(arg: String): Valor {
         return when {
@@ -1338,11 +1350,9 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
     private fun criarObjetoClasse(nomeClasse: String, ctx: PrimarioContext): Valor {
         val classe = global.obterClasse(nomeClasse) ?: throw RuntimeException("Classe não encontrada: $nomeClasse")
 
-        // Extrair superclasse e interfaces
         val superClasse = global.getSuperClasse(classe)
         val interfaces = global.getInterfaces(classe)
 
-        // Criar o objeto
         val objeto = Valor.Objeto(nomeClasse, mutableMapOf(), superClasse, interfaces)
 
         if (superClasse != null) {
@@ -1358,10 +1368,8 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
             ambiente = oldAmbiente
         }
 
-        // Chamar inicializador, se existir
         val inicializarMetodo = classe.declaracaoFuncao().find { it.ID().text == "inicializar" }
         if (inicializarMetodo != null) {
-            // Extrair argumentos da chamada do construtor
             val argumentos = extrairArgumentosDoConstructor(ctx)
             executarMetodo(objeto, inicializarMetodo, argumentos)
         }
