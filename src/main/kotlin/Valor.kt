@@ -15,6 +15,7 @@ sealed class Valor {
 
     data class Param(val nome: String, val tipo: String)
 
+
     data class Interface(val nome: String, val assinaturas: Map<String, AssinaturaMetodo>) : Valor()
     class AssinaturaMetodo(val nome: String, val parametros: List<Param>, val tipoRetorno: String? = null)
 

@@ -998,6 +998,7 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
     }
 
     override fun visitDeclaracaoFacaEnquanto(ctx: DeclaracaoFacaEnquantoContext): Valor {
+        var limit: Int = 0;
         do {
             try {
                 visit(ctx.declaracao())
@@ -1026,6 +1027,11 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
             if (!condicao.valor) {
                 break
             }
+            limit++
+            if (limit >= 100) {
+                println("Aviso: Loop infinito detectado! Saindo do loop.")
+                break
+            }
         } while (true)
 
         return Valor.Nulo
@@ -1043,7 +1049,6 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
     override fun visitMapaLiteral(ctx: MapaLiteralContext): Valor {
         return Valor.Mapa()
     }
-
 
     override fun visitAcessoArray(ctx: AcessoArrayContext): Valor {
         val container = visit(ctx.primario())

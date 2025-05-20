@@ -26,6 +26,7 @@ fun modoInterativo() {
                 val caminho = input.substring(4)
                 executarArquivo(caminho)
             }
+
             else -> println("Comando não reconhecido. Digite 'run <caminho>' ou 'exit'.")
         }
     }
