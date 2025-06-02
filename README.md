@@ -8,7 +8,6 @@
   <img src="https://img.shields.io/badge/language-kotlin-orange.svg" alt="Kotlin">
   <img src="https://img.shields.io/badge/JDK-21-blue.svg" alt="JDK 21">
   <img src="https://img.shields.io/badge/status-development-green.svg" alt="Status">
-  <img src="https://img.shields.io/badge/license-MIT-brightgreen.svg" alt="License">
 </p>
 
 <p align="center">
