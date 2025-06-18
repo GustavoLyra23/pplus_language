@@ -259,14 +259,22 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
     private fun retornoFuncaoInvalido(tipoRetorno: String?): Boolean {
         //TODO: refatorar validacao... preciso cobrir as interfaces tambem...
         return tipoRetorno != null && tipoRetorno !in listOf(
-            "Inteiro",
-            "Real",
-            "Texto",
-            "Logico",
-            "Nulo"
+            "Inteiro", "Real", "Texto", "Logico", "Nulo"
         ) && global.obterClasse(tipoRetorno) == null
     }
 
+
+    /**
+     * Visita uma declaração de retorno e executa o retorno da função.
+     *
+     * Verifica se o tipo do valor de retorno é compatível com o tipo
+     * declarado da função atual.
+     *
+     * @param ctx Contexto da declaração de retorno
+     * @return Nunca retorna normalmente (lança RetornoException)
+     * @throws RetornoException sempre, para implementar o mecanismo de retorno
+     * @throws RuntimeException se houver incompatibilidade de tipos
+     */
     override fun visitDeclaracaoReturn(ctx: DeclaracaoReturnContext): Valor {
         val valorRetorno = ctx.expressao()?.let { visit(it) } ?: Valor.Nulo
 
@@ -281,13 +289,29 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
         throw RetornoException(valorRetorno)
     }
 
-
+    /**
+     * Visita uma declaração de estrutura condicional (se/senão).
+     *
+     * @param ctx Contexto da declaração condicional
+     * @return O valor resultante da execução do ramo escolhido
+     * @throws RuntimeException se a condição não for lógica
+     */
     override fun visitDeclaracaoSe(ctx: DeclaracaoSeContext): Valor {
         val condicao = visit(ctx.expressao())
         if (condicao !is Valor.Logico) throw RuntimeException("Condição do 'if' deve ser lógica")
         return if (condicao.valor) visit(ctx.declaracao(0)) else ctx.declaracao(1)?.let { visit(it) } ?: Valor.Nulo
     }
 
+    /**
+     * Visita um bloco de código criando um novo escopo.
+     *
+     * Cria um ambiente filho do ambiente atual, preservando o objeto 'this'
+     * se existir, e garante que o ambiente anterior seja restaurado após
+     * a execução do bloco.
+     *
+     * @param ctx Contexto do bloco
+     * @return Valor.Nulo (blocos não produzem valores)
+     */
     override fun visitBloco(ctx: BlocoContext): Valor {
         val anterior = ambiente
         ambiente = Ambiente(anterior)
@@ -300,22 +324,38 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
         return Valor.Nulo
     }
 
-
+    /**
+     * Visita uma expressão delegando para seu filho.
+     *
+     * @param ctx Contexto da expressão
+     * @return O valor resultante da avaliação da expressão
+     */
     override fun visitExpressao(ctx: ExpressaoContext): Valor = visit(ctx.getChild(0))
+
+    /**
+     * Visita uma atribuição de valor.
+     *
+     * Suporta diferentes tipos de atribuição:
+     * - Atribuição simples a variáveis
+     * - Atribuição a propriedades de objetos
+     * - Atribuição a elementos de arrays/listas/mapas
+     *
+     * @param ctx Contexto da atribuição
+     * @return O valor atribuído
+     * @throws RuntimeException se a atribuição for inválida
+     */
     override fun visitAtribuicao(ctx: AtribuicaoContext): Valor {
         if (ctx.logicaOu() != null) {
             return visit(ctx.logicaOu())
         }
-
-        val valor = visit(ctx.expressao())
-
+        //TODO: rever uso da variavel valor...
+//        val valor = visit(ctx.expressao())
         if (ctx.ID() != null) {
             val nome = ctx.ID().text
             val valor = visit(ctx.expressao())
             ambiente.atualizarOuDefinir(nome, valor)
             return valor
         }
-
         if (ctx.acesso() != null) {
             val acesso = ctx.acesso()
             val objeto = visit(acesso.primario())
@@ -323,7 +363,6 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
             if (objeto !is Valor.Objeto) {
                 throw RuntimeException("Não é possível atribuir a uma propriedade de um não-objeto")
             }
-
             val nomeCampo = acesso.ID().text
             val valorCampo = visit(ctx.expressao())
 
@@ -378,7 +417,6 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
                         while (segundoIndice.valor >= lista.elementos.size) {
                             lista.elementos.add(Valor.Nulo)
                         }
-
                         lista.elementos[segundoIndice.valor] = valor
                     } else {
                         container.elementos[indice.valor] = valor
@@ -394,7 +432,6 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
                     throw RuntimeException("Operação de atribuição com índice não suportada para ${container::class.simpleName}")
                 }
             }
-
             return valor
         }
 
@@ -469,26 +506,19 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
 
     private fun saoIguais(esquerda: Valor, direita: Valor): Boolean {
         return when {
-            esquerda is Valor.Inteiro && direita is Valor.Inteiro ->
-                esquerda.valor == direita.valor
+            esquerda is Valor.Inteiro && direita is Valor.Inteiro -> esquerda.valor == direita.valor
 
-            esquerda is Valor.Real && direita is Valor.Real ->
-                esquerda.valor == direita.valor
+            esquerda is Valor.Real && direita is Valor.Real -> esquerda.valor == direita.valor
 
-            esquerda is Valor.Real && direita is Valor.Inteiro ->
-                esquerda.valor == direita.valor.toDouble()
+            esquerda is Valor.Real && direita is Valor.Inteiro -> esquerda.valor == direita.valor.toDouble()
 
-            esquerda is Valor.Inteiro && direita is Valor.Real ->
-                esquerda.valor.toDouble() == direita.valor
+            esquerda is Valor.Inteiro && direita is Valor.Real -> esquerda.valor.toDouble() == direita.valor
 
-            esquerda is Valor.Texto && direita is Valor.Texto ->
-                esquerda.valor == direita.valor
+            esquerda is Valor.Texto && direita is Valor.Texto -> esquerda.valor == direita.valor
 
-            esquerda is Valor.Logico && direita is Valor.Logico ->
-                esquerda.valor == direita.valor
+            esquerda is Valor.Logico && direita is Valor.Logico -> esquerda.valor == direita.valor
 
-            esquerda is Valor.Objeto && direita is Valor.Objeto ->
-                esquerda === direita
+            esquerda is Valor.Objeto && direita is Valor.Objeto -> esquerda === direita
 
             else -> false
         }

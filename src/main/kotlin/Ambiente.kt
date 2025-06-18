@@ -12,8 +12,40 @@ import org.gustavolyra.portugolpp.PortugolPPParser.DeclaracaoClasseContext
  * @param enclosing Ambiente pai que encapsula este ambiente (null se for o ambiente global)
  */
 class Ambiente(val enclosing: Ambiente? = null) {
+    /**
+     * Representa um mapa mutável que associa chaves String a instâncias da classe `Valor`.
+     *
+     * Este mapa é usado para armazenar variáveis no ambiente de execução atual,
+     * fornecendo um mecanismo para definir e recuperar variáveis do programa dinamicamente.
+     *
+     * A chave representa o nome da variável, enquanto o valor representa o valor associado
+     * da variável, que pode incluir vários tipos definidos na sealed class `Valor`,
+     * como inteiros, textos, objetos e mais.
+     */
     private val valores = mutableMapOf<String, Valor>()
+
+
+    /**
+     * Armazena o mapeamento de nomes de classes para seus respectivos contextos AST
+     * (Abstract Syntax Tree) no ambiente atual.
+     *
+     * Essa estrutura permite definir e buscar classes de maneira eficiente dentro
+     * do ambiente, garantindo que as classes estejam associadas ao seu contexto AST
+     * para posterior análise, interpretação ou manipulação durante a execução.
+     */
     private val classes = mutableMapOf<String, DeclaracaoClasseContext>()
+
+    /**
+     * Armazena o mapeamento de interfaces declaradas no ambiente atual.
+     *
+     * A chave do mapa é o nome da interface como uma String,
+     * e o valor é o contexto da declaração de interface
+     * representado por uma instância de `PortugolPPParser.DeclaracaoInterfaceContext`.
+     *
+     * Este mapa é utilizado para gerenciamento e busca de interfaces definidas
+     * no escopo atual do ambiente, permitindo que o interpretador conecte
+     * declarações de classes a suas respectivas interfaces implementadas.
+     */
     private val interfaces = mutableMapOf<String, PortugolPPParser.DeclaracaoInterfaceContext>()
 
     /**
@@ -54,10 +86,8 @@ class Ambiente(val enclosing: Ambiente? = null) {
     fun getInterfaces(classeContext: DeclaracaoClasseContext): List<String> {
         val result = mutableListOf<String>()
         var foundImplements = false
-
         for (i in 0 until classeContext.childCount) {
             val token = classeContext.getChild(i).text
-
             if (foundImplements) {
                 if (token == "{") break
                 if (token != "," && token != "implementa") {
@@ -67,7 +97,6 @@ class Ambiente(val enclosing: Ambiente? = null) {
                 foundImplements = true
             }
         }
-
         return result
     }
 
