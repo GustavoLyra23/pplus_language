@@ -56,42 +56,42 @@ shadowJar {
     archiveVersion.set('')
 }
 
-// Create a wrapper batch file task
-tasks.register('createExeWrapper') {
-    dependsOn shadowJar
-    doLast {
-        def exeDir = file("${buildDir}/exe")
-        exeDir.mkdirs()
-
-        // Copy the JAR file
-        copy {
-            from "${buildDir}/libs/portugolpp.jar"
-            into exeDir
-        }
-
-        // Create batch file wrapper
-        def batchFile = new File(exeDir, "portugolpp.bat")
-        batchFile.text = '''@echo off
-title Portugol++
-java -jar "%~dp0portugolpp.jar" %*
-if ERRORLEVEL 1 pause
-'''
-
-        // Create README
-        def readmeFile = new File(exeDir, "README.txt")
-        readmeFile.text = '''Portugol++ Programming Language
-===========================
-
-Para usar:
-- Duplo clique em portugolpp.bat para iniciar o modo interativo
-- OU use "portugolpp.bat run arquivo.ppp" para executar um arquivo
-
-Requisitos:
-- Java 21 ou superior deve estar instalado e no PATH
-
-Para mais informações, visite: https://github.com/seu-usuario/p_mais_mais
-'''
-
-        println "Wrapper files created in ${exeDir}"
-    }
-}
+//// Create a wrapper batch file task
+//tasks.register('createExeWrapper') {
+//    dependsOn shadowJar
+//    doLast {
+//        def exeDir = file("${buildDir}/exe")
+//        exeDir.mkdirs()
+//
+//        // Copy the JAR file
+//        copy {
+//            from "${buildDir}/libs/portugolpp.jar"
+//            into exeDir
+//        }
+//
+//        // Create batch file wrapper
+//        def batchFile = new File(exeDir, "portugolpp.bat")
+//        batchFile.text = '''@echo off
+//title Portugol++
+//java -jar "%~dp0portugolpp.jar" %*
+//if ERRORLEVEL 1 pause
+//'''
+//
+//        // Create README
+//        def readmeFile = new File(exeDir, "README.txt")
+//        readmeFile.text = '''Portugol++ Programming Language
+//===========================
+//
+//Para usar:
+//- Duplo clique em portugolpp.bat para iniciar o modo interativo
+//- OU use "portugolpp.bat run arquivo.ppp" para executar um arquivo
+//
+//Requisitos:
+//- Java 21 ou superior deve estar instalado e no PATH
+//
+//Para mais informações, visite: https://github.com/seu-usuario/p_mais_mais
+//'''
+//
+//        println "Wrapper files created in ${exeDir}"
+//    }
+//}

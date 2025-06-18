@@ -4,53 +4,127 @@ import extrairValorString
 import org.gustavolyra.portugolpp.PortugolPPParser.*
 import processarResultado
 import setFuncoes
-import java.util.*
 
-
+/**
+ * Interpretador principal para a linguagem PortugolPP.
+ *
+ * Esta classe é responsável por interpretar e executar código escrito em PortugolPP,
+ * uma linguagem de programação baseada em português. O interpretador implementa
+ * o padrão Visitor para percorrer a árvore sintática abstrata (AST) gerada pelo parser.
+ *
+ * Funcionalidades suportadas:
+ * - Declaração e manipulação de variáveis
+ * - Funções e métodos
+ * - Classes e interfaces
+ * - Estruturas de controle (se, enquanto, para)
+ * - Operações aritméticas e lógicas
+ * - Listas e mapas
+ * - Herança e polimorfismo
+ */
 @Suppress("REDUNDANT_OVERRIDE", "ABSTRACT_MEMBER_NOT_IMPLEMENTED")
 class Interpretador : PortugolPPBaseVisitor<Valor>() {
+    /** Ambiente global que contém todas as definições de classes, interfaces e funções globais */
     private val global = Ambiente()
+
+    /** Ambiente atual de execução, pode ser o global ou um escopo local */
     private var ambiente = global
+
+    /** Referência para a função atualmente em execução (usado para verificação de tipos de retorno) */
     private var funcaoAtual: Valor.Funcao? = null
 
+    //setando funcoes nativas da linguagem...
     init {
         setFuncoes(global)
     }
 
 
+    /**
+     * Interpreta um programa completo em PortugolPP.
+     *
+     * Este método é o ponto de entrada principal para execução de programas.
+     * Ele processa as declarações em três fases:
+     * 1. Registra todas as interfaces
+     * 2. Registra todas as classes
+     * 3. Executa as declarações e procura pela função main()
+     *
+     * @param tree O contexto do programa parseado pelo ANTLR
+     * @throws Exception se ocorrer erro durante a execução
+     */
     fun interpretar(tree: ProgramaContext) {
         try {
-            tree.declaracao().forEach { decl ->
-                decl.declaracaoInterface()?.let {
-                    val nome = it.ID().text
-                    global.definirInterface(nome, it)
-                }
-            }
-
-            tree.declaracao().forEach { decl ->
-                decl.declaracaoClasse()?.let {
-                    val nome = it.ID(0).text
-                    global.definirClasse(nome, it)
-                }
-            }
-
+            visitInterfaces(tree)
+            visitClasses(tree)
+            //visitando outras declaracoes mais genericas...
             tree.declaracao().forEach { visit(it) }
-
-            try {
-                val main = global.obter("main")
-                if (main is Valor.Funcao) {
-                    chamadaFuncao("main", emptyList())
-                }
-            } catch (e: Exception) {
-                //TODO: implementar
-            }
-
+            visitFuncaoMain()
         } catch (e: Exception) {
             println("Erro durante a execução: ${e.message}")
-            e.printStackTrace()
         }
     }
 
+    /**
+     * Processa as declarações de interfaces dentro de um determinado contexto do programa
+     * e as registra no ambiente global.
+     *
+     * @param tree O contexto do programa parseado pelo ANTLR contendo as
+     *             declarações a serem processadas
+     */
+    private fun visitInterfaces(tree: ProgramaContext) {
+        tree.declaracao().forEach { decl ->
+            decl.declaracaoInterface()?.let {
+                val nome = it.ID().text
+                global.definirInterface(nome, it)
+            }
+        }
+    }
+
+    /**
+     * Processa as declarações de classes dentro de um determinado contexto do programa
+     * e as registra no ambiente global.
+     *
+     * Este método percorre o programa em busca de declarações de classes, identifica
+     * seus nomes e as registra no ambiente global usando o método `definirClasse`.
+     *
+     * @param tree O contexto do programa parseado pelo ANTLR contendo as
+     *             declarações a serem processadas
+     */
+    private fun visitClasses(tree: ProgramaContext) {
+        tree.declaracao().forEach { decl ->
+            decl.declaracaoClasse()?.let {
+                val nome = it.ID(0).text
+                global.definirClasse(nome, it)
+            }
+        }
+    }
+
+    /**
+     * Executa a função principal dentro do programa, se ela existir.
+     *
+     * Este método tenta localizar e executar uma função chamada "main" no escopo global.
+     * Se a função main for encontrada e for do tipo `Valor.Funcao`, ela será invocada sem
+     * passar nenhum argumento. Se a função main não for encontrada ou sua execução falhar,
+     * uma exceção será lançada.
+     *
+     * @throws MainExecutionException se a função "main" falhar durante a execução
+     */
+    private fun visitFuncaoMain() {
+        try {
+            val main = global.obter("main")
+            if (main is Valor.Funcao) {
+                //os argumentos da funcao main serao ignorados...
+                chamadaFuncao("main", emptyList())
+            }
+        } catch (e: Exception) {
+            throw MainExecutionException("Falha durante a execução da função main")
+        }
+    }
+
+    /**
+     * Visita uma declaração de interface e a registra no ambiente global.
+     *
+     * @param ctx Contexto da declaração de interface
+     * @return Valor.Nulo (interfaces não produzem valores)
+     */
     override fun visitDeclaracaoInterface(ctx: DeclaracaoInterfaceContext): Valor {
         val nomeInterface = ctx.ID().text
         global.definirInterface(nomeInterface, ctx)
@@ -58,6 +132,18 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
     }
 
 
+    /**
+     * Visita uma declaração de classe e a registra no ambiente global.
+     *
+     * Processa herança e implementação de interfaces, validando se:
+     * - A classe base existe (se especificada)
+     * - Todas as interfaces implementadas existem
+     * - Todos os métodos das interfaces são implementados
+     *
+     * @param ctx Contexto da declaração de classe
+     * @return Valor.Nulo (declarações de classe não produzem valores)
+     * @throws RuntimeException se a validação falhar
+     */
     override fun visitDeclaracaoClasse(ctx: DeclaracaoClasseContext): Valor {
         val nomeClasse = ctx.ID(0).text
         var superClasse: String? = null
@@ -101,6 +187,19 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
         return Valor.Nulo
     }
 
+
+    /**
+     * Visita uma declaração de variável e a define no ambiente atual.
+     *
+     * Realiza verificação de tipos se especificado, garantindo que:
+     * - O tipo da variável é válido
+     * - O valor atribuído é compatível com o tipo declarado
+     * - Objetos são compatíveis com suas classes/superclasses
+     *
+     * @param ctx Contexto da declaração de variável
+     * @return Valor.Nulo (declarações não produzem valores)
+     * @throws RuntimeException se houver incompatibilidade de tipos
+     */
     override fun visitDeclaracaoVar(ctx: DeclaracaoVarContext): Valor {
         val nome = ctx.ID().text
         val tipo = ctx.tipo()?.text;
@@ -127,42 +226,45 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
                 }
             }
         }
-
         ambiente.definir(nome, valor)
         return Valor.Nulo
     }
 
-
-    private fun isValidType(tipo: String?): Boolean {
-        if (tipo == null) return true
-        return tipo in listOf("Inteiro", "Real", "Texto", "Logico", "Nulo") || global.obterClasse(tipo) != null
-    }
-
-    private fun validarParametros(funcao: DeclaracaoFuncaoContext) {
-        funcao.listaParams()?.param()?.forEach { param ->
-            val tipoParam = param.tipo().text
-            if (!isValidType(tipoParam)) {
-                throw RuntimeException("Tipo de parâmetro inválido '${param.ID().text}: $tipoParam' na função '${funcao.ID().text}'")
-            }
-        }
-    }
-
+    /**
+     * Processa uma declaração de função dentro do contexto fornecido e a registra no ambiente atual.
+     *
+     * O método valida o tipo de retorno da função para garantir que seja um dos tipos básicos permitidos
+     * (ex: "Inteiro", "Real", "Texto", "Logico", "Nulo") ou que se refira a uma classe válida se for um tipo personalizado.
+     * Se o tipo de retorno for inválido, uma RuntimeException será lançada.
+     * Uma vez validada, a função é registrada no ambiente para uso posterior durante a execução do programa.
+     *
+     * @param ctx Contexto da declaração de função, analisado pelo ANTLR, contendo informações como nome da função, tipo de retorno e corpo.
+     * @return Uma instância de `Valor.Nulo` indicando que o processamento da declaração de função não produz um valor tangível.
+     * @throws RuntimeException se o tipo de retorno da função declarada for inválido.
+     */
     override fun visitDeclaracaoFuncao(ctx: DeclaracaoFuncaoContext): Valor {
         val nome = ctx.ID().text
         val tipoRetorno = ctx.tipo()?.text
-        if (tipoRetorno != null && tipoRetorno !in listOf(
-                "Inteiro",
-                "Real",
-                "Texto",
-                "Logico",
-                "Nulo"
-            ) && global.obterClasse(tipoRetorno) == null
-        ) {
+        if (retornoFuncaoInvalido(tipoRetorno)) {
             throw RuntimeException("Tipo de retorno inválido: $tipoRetorno")
         }
 
         ambiente.definir(nome, Valor.Funcao(nome, ctx, tipoRetorno))
         return Valor.Nulo
+    }
+
+    /**
+     * Valida retorno setado na declaracao da funcao
+     */
+    private fun retornoFuncaoInvalido(tipoRetorno: String?): Boolean {
+        //TODO: refatorar validacao... preciso cobrir as interfaces tambem...
+        return tipoRetorno != null && tipoRetorno !in listOf(
+            "Inteiro",
+            "Real",
+            "Texto",
+            "Logico",
+            "Nulo"
+        ) && global.obterClasse(tipoRetorno) == null
     }
 
     override fun visitDeclaracaoReturn(ctx: DeclaracaoReturnContext): Valor {
@@ -775,19 +877,15 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
 
     fun verificarImplementacaoInterface(classeContext: DeclaracaoClasseContext, nomeInterface: String): Boolean {
         val interfaceContext = global.obterInterface(nomeInterface) ?: return false
-
         for (assinatura in interfaceContext.assinaturaMetodo()) {
             val nomeMetodo = assinatura.ID().text
-
             val implementado = classeContext.declaracaoFuncao().any { it.ID().text == nomeMetodo }
-
             if (!implementado) {
                 val superClasse = global.getSuperClasse(classeContext)
                 if (superClasse != null) {
                     val classeBase = global.obterClasse(superClasse)
                     if (classeBase != null) {
                         val implementadoNaSuperClasse = classeBase.declaracaoFuncao().any { it.ID().text == nomeMetodo }
-
                         if (!implementadoNaSuperClasse) {
                             return false
                         }
@@ -799,7 +897,6 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
                 }
             }
         }
-
         return true
     }
 
