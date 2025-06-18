@@ -1,6 +1,9 @@
 package org.gustavolyra.portugolpp
 
+import extrairValorString
 import org.gustavolyra.portugolpp.PortugolPPParser.*
+import processarResultado
+import setFuncoes
 import java.util.*
 
 
@@ -11,161 +14,7 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
     private var funcaoAtual: Valor.Funcao? = null
 
     init {
-        global.definir("escrever", Valor.Funcao("escrever", null) { args ->
-            val valores = args.map { extrairValorParaImpressao(it) }
-            println(valores.joinToString(" "))
-            Valor.Nulo
-        })
-
-        global.definir("imprimir", Valor.Funcao("imprimir", null) { args ->
-            val valores = args.map { extrairValorParaImpressao(it) }
-            println(valores.joinToString(" "))
-            Valor.Nulo
-        })
-
-        global.definir("ler", Valor.Funcao("ler", null) { args ->
-            Scanner(System.`in`).nextLine().let { Valor.Texto(it) }
-        })
-
-        global.definir("tamanho", Valor.Funcao("tamanho", null) { args ->
-            if (args.isEmpty()) {
-                throw RuntimeException("Função tamanho requer um argumento (lista, mapa ou texto)")
-            }
-
-            when (val arg = args[0]) {
-                is Valor.Lista -> Valor.Inteiro(arg.elementos.size)
-                is Valor.Mapa -> Valor.Inteiro(arg.elementos.size)
-                is Valor.Texto -> Valor.Inteiro(arg.valor.length)
-                else -> throw RuntimeException("Função tamanho só funciona com listas, mapas ou textos")
-            }
-        })
-
-        global.definir("adicionar", Valor.Funcao("adicionar", null) { args ->
-            if (args.size < 2) {
-                throw RuntimeException("Função adicionar requer pelo menos 2 argumentos: lista e elemento")
-            }
-
-            val lista = args[0]
-            if (lista !is Valor.Lista) {
-                throw RuntimeException("Primeiro argumento deve ser uma lista")
-            }
-
-            for (i in 1 until args.size) {
-                lista.elementos.add(args[i])
-            }
-
-            lista
-        })
-
-        global.definir("remover", Valor.Funcao("remover", null) { args ->
-            if (args.size != 2) {
-                throw RuntimeException("Função remover requer 2 argumentos: lista e índice")
-            }
-
-            val lista = args[0]
-            val indice = args[1]
-
-            if (lista !is Valor.Lista) {
-                throw RuntimeException("Primeiro argumento deve ser uma lista")
-            }
-
-            if (indice !is Valor.Inteiro) {
-                throw RuntimeException("Segundo argumento deve ser um número inteiro")
-            }
-
-            if (indice.valor < 0 || indice.valor >= lista.elementos.size) {
-                throw RuntimeException("Índice fora dos limites da lista: ${indice.valor}")
-            }
-
-            lista.elementos.removeAt(indice.valor)
-        })
-
-        global.definir("chaves", Valor.Funcao("chaves", null) { args ->
-            if (args.isEmpty()) {
-                throw RuntimeException("Função chaves requer um argumento (mapa)")
-            }
-
-            val mapa = args[0]
-            if (mapa !is Valor.Mapa) {
-                throw RuntimeException("Argumento deve ser um mapa")
-            }
-
-            Valor.Lista(mapa.elementos.keys.toMutableList())
-        })
-
-        global.definir("valores", Valor.Funcao("valores", null) { args ->
-            if (args.isEmpty()) {
-                throw RuntimeException("Função valores requer um argumento (mapa)")
-            }
-
-            val mapa = args[0]
-            if (mapa !is Valor.Mapa) {
-                throw RuntimeException("Argumento deve ser um mapa")
-            }
-
-            Valor.Lista(mapa.elementos.values.toMutableList())
-        })
-
-        global.definir("contemChave", Valor.Funcao("contemChave", null) { args ->
-            if (args.size != 2) {
-                throw RuntimeException("Função contemChave requer 2 argumentos: mapa e chave")
-            }
-
-            val mapa = args[0]
-            val chave = args[1]
-
-            if (mapa !is Valor.Mapa) {
-                throw RuntimeException("Primeiro argumento deve ser um mapa")
-            }
-
-            Valor.Logico(mapa.elementos.containsKey(chave))
-        })
-    }
-
-
-    private fun extrairValorParaImpressao(valor: Valor): String {
-        return when (valor) {
-            is Valor.Lista -> {
-                val elementos = valor.elementos.map { extrairValorParaImpressao(it) }
-                "[${elementos.joinToString(", ")}]"
-            }
-
-            is Valor.Mapa -> {
-                val entradas = valor.elementos.map { (chave, valor) ->
-                    "${extrairValorParaImpressao(chave)}: ${extrairValorParaImpressao(valor)}"
-                }
-                "[[${entradas.joinToString(", ")}]]"
-            }
-
-            is Valor.Texto -> "\"${valor.valor}\""
-            is Valor.Inteiro -> valor.valor.toString()
-            is Valor.Real -> valor.valor.toString()
-            is Valor.Logico -> if (valor.valor) "verdadeiro" else "falso"
-            is Valor.Objeto -> "[Objeto ${valor.klass}]"
-            is Valor.Funcao -> "[função ${valor.nome}]"
-            Valor.Nulo -> "nulo"
-            else -> valor.toString()
-        }
-    }
-
-
-    private fun extrairValorString(valor: Valor): String {
-        return when (valor) {
-            is Valor.Texto -> valor.valor
-            is Valor.Lista -> {
-                val elementos = valor.elementos.map { extrairValorString(it) }
-                "[${elementos.joinToString(", ")}]"
-            }
-
-            is Valor.Mapa -> {
-                val entradas = valor.elementos.map { (chave, valor) ->
-                    "${extrairValorString(chave)}: ${extrairValorString(valor)}"
-                }
-                "[[${entradas.joinToString(", ")}]]"
-            }
-
-            else -> valor.toString()
-        }
+        setFuncoes(global)
     }
 
 
@@ -301,7 +150,14 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
     override fun visitDeclaracaoFuncao(ctx: DeclaracaoFuncaoContext): Valor {
         val nome = ctx.ID().text
         val tipoRetorno = ctx.tipo()?.text
-        if (tipoRetorno != null && tipoRetorno !in listOf("Inteiro", "Real", "Texto", "Logico", "Nulo") && global.obterClasse(tipoRetorno) == null) {
+        if (tipoRetorno != null && tipoRetorno !in listOf(
+                "Inteiro",
+                "Real",
+                "Texto",
+                "Logico",
+                "Nulo"
+            ) && global.obterClasse(tipoRetorno) == null
+        ) {
             throw RuntimeException("Tipo de retorno inválido: $tipoRetorno")
         }
 
@@ -314,19 +170,7 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
 
         if (funcaoAtual != null && funcaoAtual!!.tipoRetorno != null) {
             val tipoEsperado = funcaoAtual!!.tipoRetorno
-            val tipoAtual = when (valorRetorno) {
-                is Valor.Inteiro -> "Inteiro"
-                is Valor.Real -> "Real"
-                is Valor.Texto -> "Texto"
-                is Valor.Logico -> "Logico"
-                is Valor.Objeto -> valorRetorno.klass
-                is Valor.Funcao -> "Funcao"
-                Valor.Nulo -> "Nulo"
-                is Valor.Interface -> TODO()
-                is Valor.Lista -> TODO()
-                is Valor.Mapa -> TODO()
-            }
-
+            val tipoAtual = processarResultado(valorRetorno)
             if (tipoEsperado != tipoAtual) {
                 throw RuntimeException("Erro de tipo: função '${funcaoAtual!!.nome}' deve retornar '$tipoEsperado', mas está retornando '$tipoAtual'")
             }
@@ -692,7 +536,6 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
                 }
             }
         }
-
         return esquerda
     }
 
@@ -712,8 +555,14 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
                 }
 
                 "/" -> when {
-                    (direita is Valor.Inteiro && direita.valor == 0) || (direita is Valor.Real && direita.valor == 0.0) -> throw RuntimeException("Divisão por zero")
-                    esquerda is Valor.Inteiro && direita is Valor.Inteiro -> if (esquerda.valor % direita.valor == 0) Valor.Inteiro(esquerda.valor / direita.valor) else Valor.Real(esquerda.valor.toDouble() / direita.valor)
+                    (direita is Valor.Inteiro && direita.valor == 0) || (direita is Valor.Real && direita.valor == 0.0) -> throw RuntimeException(
+                        "Divisão por zero"
+                    )
+
+                    esquerda is Valor.Inteiro && direita is Valor.Inteiro -> if (esquerda.valor % direita.valor == 0) Valor.Inteiro(
+                        esquerda.valor / direita.valor
+                    ) else Valor.Real(esquerda.valor.toDouble() / direita.valor)
+
                     esquerda is Valor.Real && direita is Valor.Real -> Valor.Real(esquerda.valor / direita.valor)
                     esquerda is Valor.Inteiro && direita is Valor.Real -> Valor.Real(esquerda.valor.toDouble() / direita.valor)
                     esquerda is Valor.Real && direita is Valor.Inteiro -> Valor.Real(esquerda.valor / direita.valor.toDouble())
@@ -1166,8 +1015,10 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
 
             val metodoNome = ctx.ID().text
 
-            val classe = global.obterClasse(objeto.klass) ?: throw RuntimeException("Classe não encontrada: ${objeto.klass}")
-            val metodo = classe.declaracaoFuncao().find { it.ID().text == metodoNome } ?: throw RuntimeException("Método não encontrado: $metodoNome")
+            val classe =
+                global.obterClasse(objeto.klass) ?: throw RuntimeException("Classe não encontrada: ${objeto.klass}")
+            val metodo = classe.declaracaoFuncao().find { it.ID().text == metodoNome }
+                ?: throw RuntimeException("Método não encontrado: $metodoNome")
 
             executarMetodo(objeto, metodo, argumentos)
         } else {
@@ -1209,19 +1060,7 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
 
                 if (funcao.tipoRetorno != null) {
                     val tipoEsperado = funcao.tipoRetorno
-                    val tipoAtual = when (resultado) {
-                        is Valor.Inteiro -> "Inteiro"
-                        is Valor.Real -> "Real"
-                        is Valor.Texto -> "Texto"
-                        is Valor.Logico -> "Logico"
-                        is Valor.Objeto -> resultado.klass
-                        is Valor.Funcao -> "Funcao"
-                        Valor.Nulo -> "Nulo"
-                        is Valor.Interface -> TODO()
-                        is Valor.Lista -> TODO()
-                        is Valor.Mapa -> TODO()
-                    }
-
+                    val tipoAtual = processarResultado(resultado)
                     if (tipoEsperado != tipoAtual) {
                         throw RuntimeException("Erro de tipo: função '$nome' deve retornar '$tipoEsperado', mas está retornando '$tipoAtual'")
                     }
@@ -1293,7 +1132,12 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
         return when {
             ctx.listaLiteral() != null -> visit(ctx.listaLiteral())
             ctx.mapaLiteral() != null -> visit(ctx.mapaLiteral())
-            ctx.NUMERO() != null -> ctx.NUMERO().text.let { if (it.contains(".")) Valor.Real(it.toDouble()) else Valor.Inteiro(it.toInt()) }
+            ctx.NUMERO() != null -> ctx.NUMERO().text.let {
+                if (it.contains(".")) Valor.Real(it.toDouble()) else Valor.Inteiro(
+                    it.toInt()
+                )
+            }
+
             ctx.TEXTO_LITERAL() != null -> Valor.Texto(ctx.TEXTO_LITERAL().text.removeSurrounding("\""))
             ctx.ID() != null && !ctx.text.startsWith("nova") -> {
                 val nome = ctx.ID().text
@@ -1364,7 +1208,7 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
 
     private fun extrairArgumentosDoConstructor(ctx: PrimarioContext): List<Valor> {
         val args = mutableListOf<Valor>()
-        if (ctx.getChildCount() > 2 && ctx.getChild(ctx.getChildCount() - 2).text == "(") {
+        if (ctx.childCount > 2 && ctx.getChild(ctx.getChildCount() - 2).text == "(") {
             val argText = ctx.getChild(ctx.getChildCount() - 1).text
             if (argText != ")" && argText.isNotEmpty()) {
                 val argumentos = argText.split(",")

@@ -64,7 +64,12 @@ fun executarPortugolPP(codigo: String) {
         parser.removeErrorListeners()
         parser.addErrorListener(object : BaseErrorListener() {
             override fun syntaxError(
-                recognizer: Recognizer<*, *>, offendingSymbol: Any?, line: Int, charPositionInLine: Int, msg: String?, e: RecognitionException?
+                recognizer: Recognizer<*, *>,
+                offendingSymbol: Any?,
+                line: Int,
+                charPositionInLine: Int,
+                msg: String?,
+                e: RecognitionException?
             ) {
                 println("Erro de sintaxe na linha $line:$charPositionInLine - $msg")
                 e?.printStackTrace()
