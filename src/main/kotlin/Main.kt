@@ -36,7 +36,6 @@ fun modoInterativo() {
     println("Digite 'exit' para sair")
     println("Digite 'run <caminho>' para executar um arquivo")
     while (true) {
-
         print("> ")
         val input = readlnOrNull()?.trim() ?: continue
         when {

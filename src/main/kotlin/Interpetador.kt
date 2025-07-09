@@ -146,7 +146,7 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
      */
     override fun visitDeclaracaoClasse(ctx: DeclaracaoClasseContext): Valor {
         val nomeClasse = ctx.ID(0).text
-        var superClasse: String? = null
+        var superClasse: String?
 
         if (ctx.childCount > 3 && ctx.getChild(2).text == "estende") {
             superClasse = ctx.getChild(3).text
@@ -889,9 +889,9 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
                 visit(ctx.declaracao())
             } catch (e: RetornoException) {
                 throw e
-            } catch (e: BreakException) {
+            } catch (_: BreakException) {
                 break
-            } catch (e: ContinueException) {
+            } catch (_: ContinueException) {
                 continue
             }
         }
@@ -905,6 +905,14 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
     }
 
 
+    /**
+     * Verifica se uma determinada classe implementa todos os métodos de uma interface específica.
+     *
+     * @param classeContext O contexto da classe que está sendo verificada quanto à implementação da interface.
+     * @param nomeInterface O nome da interface a ser verificada.
+     * @return True se a classe implementa todos os métodos da interface especificada, ou se os métodos
+     *         estão implementados em uma superclasse. False caso contrário.
+     */
     fun verificarImplementacaoInterface(classeContext: DeclaracaoClasseContext, nomeInterface: String): Boolean {
         val interfaceContext = global.obterInterface(nomeInterface) ?: return false
         for (assinatura in interfaceContext.assinaturaMetodo()) {
@@ -930,6 +938,17 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
         return true
     }
 
+    /**
+     * Visita e avalia uma declaração de loop 'para' (for) dentro do contexto fornecido.
+     *
+     * Este método processa as expressões de inicialização, condição e incremento de um loop 'para',
+     * gerenciando a execução do loop e mecanismos de controle de fluxo como declarações de quebra e continue.
+     *
+     * @param ctx O contexto de análise que representa a declaração do loop 'para'.
+     * @return Uma instância de `Valor` correspondente ao resultado da execução do loop 'para'.
+     *         Retorna `Valor.Nulo` em caso de terminação normal.
+     * @throws RuntimeException Se a condição do loop não avaliar para um valor lógico (booleano).
+     */
     override fun visitDeclaracaoPara(ctx: DeclaracaoParaContext): Valor {
         if (ctx.declaracaoVar() != null) {
             visit(ctx.declaracaoVar())
@@ -952,11 +971,11 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
                 visit(ctx.declaracao())
             } catch (e: RetornoException) {
                 throw e
-            } catch (e: BreakException) {
+            } catch (_: BreakException) {
                 break
-            } catch (e: ContinueException) {
+            } catch (_: ContinueException) {
+                //TODO: Esta parte existe para processar o continue porem processando o incremental do loop -> visit(ctx.expressao(1)),refatorar isso no futuro...
                 val condicao = visit(ctx.expressao(0))
-
                 if (condicao !is Valor.Logico) {
                     throw RuntimeException("Condição do 'para' deve ser um valor lógico")
                 }
@@ -974,21 +993,21 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
     }
 
     override fun visitDeclaracaoFacaEnquanto(ctx: DeclaracaoFacaEnquantoContext): Valor {
-        var limit: Int = 0;
+        var limit = 0
         do {
             try {
                 visit(ctx.declaracao())
             } catch (e: RetornoException) {
                 throw e
-            } catch (e: BreakException) {
+            } catch (_: BreakException) {
                 break
-            } catch (e: ContinueException) {
+            } catch (_: ContinueException) {
                 val condicao = visit(ctx.expressao())
                 if (condicao !is Valor.Logico) {
                     throw RuntimeException("Condição do 'enquanto' deve ser um valor lógico")
                 }
                 if (!condicao.valor) {
-                    break;
+                    break
                 }
                 visit(ctx.declaracao())
                 continue
@@ -1089,15 +1108,17 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
 
                     when (primeiroElemento) {
                         is Valor.Lista -> {
-                            if (segundoIndice !is Valor.Inteiro) {
-                                throw RuntimeException("Segundo índice deve ser um número inteiro para acessar uma lista")
-                            }
+                            when {
+                                segundoIndice !is Valor.Inteiro -> {
+                                    throw RuntimeException("Segundo índice deve ser um número inteiro para acessar uma lista")
+                                }
 
-                            if (segundoIndice.valor < 0 || segundoIndice.valor >= primeiroElemento.elementos.size) {
-                                throw RuntimeException("Segundo índice fora dos limites da lista: ${segundoIndice.valor}")
-                            }
+                                segundoIndice.valor < 0 || segundoIndice.valor >= primeiroElemento.elementos.size -> {
+                                    throw RuntimeException("Segundo índice fora dos limites da lista: ${segundoIndice.valor}")
+                                }
 
-                            return primeiroElemento.elementos[segundoIndice.valor]
+                                else -> return primeiroElemento.elementos[segundoIndice.valor]
+                            }
                         }
 
                         is Valor.Mapa -> {
@@ -1151,14 +1172,6 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
         } else {
             val funcaoNome = ctx.ID().text
             chamadaFuncao(funcaoNome, argumentos)
-        }
-    }
-
-    private fun isCondicaoVerdadeira(condicao: Valor): Boolean {
-        return when (condicao) {
-            is Valor.Logico -> condicao.valor
-            Valor.Nulo -> false
-            else -> throw RuntimeException("Expressão de condição deve resultar em tipo Lógico, mas recebeu ${condicao::class.simpleName}")
         }
     }
 
