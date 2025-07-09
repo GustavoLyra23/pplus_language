@@ -2,8 +2,6 @@
   <img src="./asset/ppp.png" alt="P++ Programming Language Logo" width="150">
 </p>
 
-<h1 align="center">P++ Programming Language</h1>
-
 <p align="center">
   <img src="https://img.shields.io/badge/status-development-green.svg" alt="Status">
 </p>
@@ -32,6 +30,10 @@ Portugol, mas com recursos modernos de linguagens orientadas a objetos.
 
 - Java JDK 21 ou superior
 - Gradle 8.0 ou superior
+
+## Documentação
+
+https://deepwiki.com/GustavoLyra23/PPlus
 
 ## Instalação
 
