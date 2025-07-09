@@ -17,7 +17,8 @@
 
 ## Sobre o Projeto
 
-P++ foi destinado a falantes de português, facilitando o aprendizado de programação através de uma sintaxe semelhante ao Portugol, mas com recursos modernos de linguagens orientadas a objetos.
+P++ foi destinado a falantes de português, facilitando o aprendizado de programação através de uma sintaxe semelhante ao
+Portugol, mas com recursos modernos de linguagens orientadas a objetos.
 
 ## Características
 
