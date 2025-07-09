@@ -5,8 +5,6 @@
 <h1 align="center">P++ Programming Language</h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/language-kotlin-orange.svg" alt="Kotlin">
-  <img src="https://img.shields.io/badge/JDK-21-blue.svg" alt="JDK 21">
   <img src="https://img.shields.io/badge/status-development-green.svg" alt="Status">
 </p>
 
