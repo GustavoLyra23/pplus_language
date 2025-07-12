@@ -61,11 +61,7 @@ fun modoInterativo() {
 fun executarArquivo(caminho: String) {
     try {
         val arquivo = File(caminho)
-        if (!arquivo.exists()) {
-            println("Erro: Arquivo não encontrado!")
-            return
-        }
-
+        if (validarArquivo(arquivo)) return
         val fileData = arquivo.readText()
         executarPortugolPP(fileData)
     } catch (e: Exception) {
@@ -134,3 +130,16 @@ fun executarPortugolPP(codigo: String) {
         println("Erro ao executar o programa: ${e.message}")
     }
 }
+
+fun validarArquivo(arquivo: File): Boolean {
+    if (!arquivo.exists()) {
+        println("Erro: Arquivo não encontrado!")
+        return false
+    }
+    if (arquivo.name.endsWith(".pp")) {
+        println("Formato do arquivo invalido...")
+        return false
+    }
+    return true
+}
+

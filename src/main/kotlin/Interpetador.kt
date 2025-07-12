@@ -37,7 +37,6 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
         setFuncoes(global)
     }
 
-
     /**
      * Interpreta um programa completo em PortugolPP.
      *
@@ -1253,7 +1252,7 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
                 metodoAmbiente.definir(paramNome, Valor.Nulo)
             }
         }
-
+        
         val oldAmbiente = ambiente
         ambiente = metodoAmbiente
 

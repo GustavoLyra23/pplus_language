@@ -1,19 +1,6 @@
-<p align="center">
-  <img src="./asset/ppp.png" alt="P++ Programming Language Logo" width="150">
-</p>
-
-<p align="center">
-  <img src="https://img.shields.io/badge/status-development-green.svg" alt="Status">
-</p>
-
-<p align="center">
-  <b>P++</b> é uma linguagem de programação baseada em Portugol, implementada em Kotlin, 
-  com sintaxe inspirada Portugol.
-</p>
-
 ## Sobre o Projeto
 
-P++ foi destinado a falantes de português, facilitando o aprendizado de programação através de uma sintaxe semelhante ao
+<img src="./asset/arrow.png" alt="P++ Programming Language Logo" width="20" align="middle"> P++ foi destinado a falantes de português, facilitando o aprendizado de programação através de uma sintaxe semelhante ao
 Portugol, mas com recursos modernos de linguagens orientadas a objetos.
 
 ## Características
@@ -33,8 +20,10 @@ Portugol, mas com recursos modernos de linguagens orientadas a objetos.
 
 ## Documentação
 
-https://deepwiki.com/GustavoLyra23/PPlus
+<img src="./asset/arrow.png" alt="P++ Programming Language Logo" width="20" align="middle">  https://deepwiki.com/GustavoLyra23/PPlus
 
 ## Instalação
 
 Você pode clonar o repositório e construir o projeto usando Gradle:
+
+<img src="https://img.shields.io/badge/status-development-green.svg" alt="Status" />
