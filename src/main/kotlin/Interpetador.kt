@@ -1,9 +1,11 @@
 package org.gustavolyra.portugolpp
 
-import extrairValorString
 import org.gustavolyra.portugolpp.PortugolPPParser.*
 import processarResultado
 import setFuncoes
+import util.constants.LOOP
+import util.processors.comparar
+import util.processors.processarAdicao
 
 @Suppress("REDUNDANT_OVERRIDE", "ABSTRACT_MEMBER_NOT_IMPLEMENTED")
 class Interpretador : PortugolPPBaseVisitor<Valor>() {
@@ -153,8 +155,7 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
         return Valor.Nulo
     }
 
-    private fun retornoFuncaoInvalido(tipoRetorno: String?): Boolean {
-        //TODO: refatorar validacao... preciso cobrir as interfaces tambem...
+    private fun retornoFuncaoInvalido(tipoRetorno: String?): Boolean {/*TODO: refatorar validacao... preciso cobrir as interfaces tambem... */
         return tipoRetorno != null && tipoRetorno !in listOf(
             "Inteiro", "Real", "Texto", "Logico", "Nulo"
         ) && global.obterClasse(tipoRetorno) == null
@@ -200,7 +201,7 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
             return visit(ctx.logicaOu())
         }
         //TODO: rever uso da variavel valor...
-//        val valor = visit(ctx.expressao())
+        //val valor = visit(ctx.expressao())
         if (ctx.ID() != null) {
             val nome = ctx.ID().text
             val valor = visit(ctx.expressao())
@@ -392,132 +393,13 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
         return esquerda
     }
 
-    private fun comparar(operador: String, esquerda: Valor, direita: Valor): Valor {
-        return when {
-            esquerda is Valor.Inteiro && direita is Valor.Inteiro -> Valor.Logico(
-                when (operador) {
-                    "<" -> esquerda.valor < direita.valor
-                    "<=" -> esquerda.valor <= direita.valor
-                    ">" -> esquerda.valor > direita.valor
-                    ">=" -> esquerda.valor >= direita.valor
-                    else -> false
-                }
-            )
-
-            esquerda is Valor.Real && direita is Valor.Real -> Valor.Logico(
-                when (operador) {
-                    "<" -> esquerda.valor < direita.valor
-                    "<=" -> esquerda.valor <= direita.valor
-                    ">" -> esquerda.valor > direita.valor
-                    ">=" -> esquerda.valor >= direita.valor
-                    else -> false
-                }
-            )
-
-            esquerda is Valor.Real && direita is Valor.Inteiro -> Valor.Logico(
-                when (operador) {
-                    "<" -> esquerda.valor < direita.valor.toDouble()
-                    "<=" -> esquerda.valor <= direita.valor.toDouble()
-                    ">" -> esquerda.valor > direita.valor.toDouble()
-                    ">=" -> esquerda.valor >= direita.valor.toDouble()
-                    else -> false
-                }
-            )
-
-            esquerda is Valor.Inteiro && direita is Valor.Real -> Valor.Logico(
-                when (operador) {
-                    "<" -> esquerda.valor.toDouble() < direita.valor
-                    "<=" -> esquerda.valor.toDouble() <= direita.valor
-                    ">" -> esquerda.valor.toDouble() > direita.valor
-                    ">=" -> esquerda.valor.toDouble() >= direita.valor
-                    else -> false
-                }
-            )
-
-            esquerda is Valor.Texto && direita is Valor.Texto -> Valor.Logico(
-                when (operador) {
-                    "<" -> esquerda.valor < direita.valor
-                    "<=" -> esquerda.valor <= direita.valor
-                    ">" -> esquerda.valor > direita.valor
-                    ">=" -> esquerda.valor >= direita.valor
-                    else -> false
-                }
-            )
-
-            else -> throw RuntimeException("Operador '$operador' não suportado para ${esquerda::class.simpleName} e ${direita::class.simpleName}")
-        }
-    }
 
     override fun visitAdicao(ctx: AdicaoContext): Valor {
         var esquerda = visit(ctx.multiplicacao(0))
-
         for (i in 1 until ctx.multiplicacao().size) {
             val operador = ctx.getChild(i * 2 - 1).text
             val direita = visit(ctx.multiplicacao(i))
-
-            esquerda = when (operador) {
-                "+" -> when {
-                    esquerda is Valor.Texto || direita is Valor.Texto -> {
-                        val esquerdaStr = extrairValorString(esquerda)
-                        val direitaStr = extrairValorString(direita)
-                        Valor.Texto(esquerdaStr + direitaStr)
-                    }
-
-                    esquerda is Valor.Inteiro && direita is Valor.Inteiro -> {
-                        val resultado = Valor.Inteiro(esquerda.valor + direita.valor)
-                        resultado
-                    }
-
-                    esquerda is Valor.Real && direita is Valor.Real -> {
-                        val resultado = Valor.Real(esquerda.valor + direita.valor)
-                        resultado
-                    }
-
-                    esquerda is Valor.Inteiro && direita is Valor.Real -> {
-                        val resultado = Valor.Real(esquerda.valor.toDouble() + direita.valor)
-                        resultado
-                    }
-
-                    esquerda is Valor.Real && direita is Valor.Inteiro -> {
-                        val resultado = Valor.Real(esquerda.valor + direita.valor.toDouble())
-                        resultado
-                    }
-
-                    else -> {
-                        throw RuntimeException("Operador '+' não suportado para ${esquerda::class.simpleName} e ${direita::class.simpleName}")
-                    }
-                }
-
-                "-" -> when {
-                    esquerda is Valor.Inteiro && direita is Valor.Inteiro -> {
-                        val resultado = Valor.Inteiro(esquerda.valor - direita.valor)
-                        resultado
-                    }
-
-                    esquerda is Valor.Real && direita is Valor.Real -> {
-                        val resultado = Valor.Real(esquerda.valor - direita.valor)
-                        resultado
-                    }
-
-                    esquerda is Valor.Inteiro && direita is Valor.Real -> {
-                        val resultado = Valor.Real(esquerda.valor.toDouble() - direita.valor)
-                        resultado
-                    }
-
-                    esquerda is Valor.Real && direita is Valor.Inteiro -> {
-                        val resultado = Valor.Real(esquerda.valor - direita.valor.toDouble())
-                        resultado
-                    }
-
-                    else -> {
-                        throw RuntimeException("Operador '-' não suportado para ${esquerda::class.simpleName} e ${direita::class.simpleName}")
-                    }
-                }
-
-                else -> {
-                    throw RuntimeException("Operador desconhecido: $operador")
-                }
-            }
+            esquerda = processarAdicao(operador, esquerda, direita)
         }
         return esquerda
     }
@@ -718,7 +600,7 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
 
     override fun visitDeclaracaoEnquanto(ctx: DeclaracaoEnquantoContext): Valor {
         var iteracoes = 0
-        val maxIteracoes = 100
+        val maxIteracoes = LOOP.VALOR_MAX_LOOP.valor
 
         while (iteracoes < maxIteracoes) {
             val condicao = visit(ctx.expressao())
@@ -751,7 +633,6 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
             println("Aviso: Loop infinito detectado! Saindo do loop.")
             return Valor.Nulo
         }
-
         return Valor.Nulo
     }
 
@@ -1006,8 +887,13 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
         }
     }
 
-
     private fun chamadaFuncao(nome: String, argumentos: List<Valor>): Valor {
+        ambiente.thisObjeto?.let { obj ->
+            buscarMetodoNaHierarquia(obj, nome)?.let { ctx ->
+                return executarMetodo(obj, ctx, argumentos)
+            }
+        }
+
         val funcao = try {
             val value = ambiente.obter(nome)
             value as? Valor.Funcao ?: throw RuntimeException("'$nome' não é uma função")

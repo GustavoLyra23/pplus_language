@@ -3,12 +3,12 @@ package org.gustavolyra.portugolpp
 import org.gustavolyra.portugolpp.PortugolPPParser.DeclaracaoClasseContext
 
 class Ambiente(val enclosing: Ambiente? = null) {
+    //tentando imitar o prototype do js
     private val valores = mutableMapOf<String, Valor>()
 
     private val classes = mutableMapOf<String, DeclaracaoClasseContext>()
 
     private val interfaces = mutableMapOf<String, PortugolPPParser.DeclaracaoInterfaceContext>()
-
 
     var thisObjeto: Valor.Objeto? = null
 
