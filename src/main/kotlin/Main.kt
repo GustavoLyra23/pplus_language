@@ -94,7 +94,7 @@ fun validarArquivo(arquivo: File): Boolean {
         println("Erro: Arquivo não encontrado!")
         return false
     }
-    if (arquivo.name.endsWith(".pp")) {
+    if (arquivo.name.endsWith(".pplus")) {
         println("Formato do arquivo invalido...")
         return false
     }
