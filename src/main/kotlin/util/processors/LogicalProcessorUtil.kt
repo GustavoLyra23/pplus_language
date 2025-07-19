@@ -57,3 +57,23 @@ fun comparar(operador: String, esquerda: Valor, direita: Valor): Valor {
         else -> throw RuntimeException("Operador '$operador' não suportado para ${esquerda::class.simpleName} e ${direita::class.simpleName}")
     }
 }
+
+fun saoIguais(esquerda: Valor, direita: Valor): Boolean {
+    return when {
+        esquerda is Valor.Inteiro && direita is Valor.Inteiro -> esquerda.valor == direita.valor
+
+        esquerda is Valor.Real && direita is Valor.Real -> esquerda.valor == direita.valor
+
+        esquerda is Valor.Real && direita is Valor.Inteiro -> esquerda.valor == direita.valor.toDouble()
+
+        esquerda is Valor.Inteiro && direita is Valor.Real -> esquerda.valor.toDouble() == direita.valor
+
+        esquerda is Valor.Texto && direita is Valor.Texto -> esquerda.valor == direita.valor
+
+        esquerda is Valor.Logico && direita is Valor.Logico -> esquerda.valor == direita.valor
+
+        esquerda is Valor.Objeto && direita is Valor.Objeto -> esquerda === direita
+
+        else -> false
+    }
+}

@@ -1,11 +1,14 @@
 package org.gustavolyra.portugolpp
 
+import avaliarArgumento
 import org.gustavolyra.portugolpp.PortugolPPParser.*
 import processarResultado
 import setFuncoes
 import util.constants.LOOP
 import util.processors.comparar
 import util.processors.processarAdicao
+import util.processors.processarMultiplicacao
+import util.processors.saoIguais
 
 @Suppress("REDUNDANT_OVERRIDE", "ABSTRACT_MEMBER_NOT_IMPLEMENTED")
 class Interpretador : PortugolPPBaseVisitor<Valor>() {
@@ -44,6 +47,7 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
         }
     }
 
+    //TODO: implementar static...
     private fun visitClasses(tree: ProgramaContext) {
         tree.declaracao().forEach { decl ->
             decl.declaracaoClasse()?.let {
@@ -57,7 +61,7 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
         try {
             val main = global.obter("main")
             if (main is Valor.Funcao) {
-                //os argumentos da funcao main serao ignorados...
+                //TODO: refatorar.... os argumentos da funcao main serao ignorados...
                 chamadaFuncao("main", emptyList())
             }
         } catch (e: Exception) {
@@ -113,7 +117,7 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
         global.definirClasse(nomeClasse, ctx)
         return Valor.Nulo
     }
-
+    
     override fun visitDeclaracaoVar(ctx: DeclaracaoVarContext): Valor {
         val nome = ctx.ID().text
         val tipo = ctx.tipo()?.text;
@@ -122,10 +126,11 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
         if (tipo != null) {
             if (valor is Valor.Objeto) {
                 val nomeClasse = valor.klass
-                if (tipo != nomeClasse && valor.superClasse != tipo) {
-                    throw RuntimeException("Tipo de variável '$nome' não corresponde ao tipo do objeto '$nomeClasse'")
+                if (tipo != nomeClasse && valor.superClasse != tipo && !valor.interfaces.contains(tipo)) {
+                    throw RuntimeException("Tipo de variável '$tipo' não corresponde ao tipo do objeto '$nomeClasse'")
                 }
             } else {
+                //TODO: passar isso para um ENUM
                 val basicType = when (valor) {
                     is Valor.Inteiro -> "Inteiro"
                     is Valor.Real -> "Real"
@@ -155,13 +160,15 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
         return Valor.Nulo
     }
 
-    private fun retornoFuncaoInvalido(tipoRetorno: String?): Boolean {/*TODO: refatorar validacao... preciso cobrir as interfaces tambem... */
-        return tipoRetorno != null && tipoRetorno !in listOf(
+    //TODO: refatorar validacao...
+    private fun retornoFuncaoInvalido(tipoRetorno: String?): Boolean {
+        if (tipoRetorno == null) return false
+        return tipoRetorno !in listOf(
             "Inteiro", "Real", "Texto", "Logico", "Nulo"
-        ) && global.obterClasse(tipoRetorno) == null
+        ) && (global.obterClasse(tipoRetorno) == null && global.obterInterface(tipoRetorno) == null)
     }
 
-
+    //TODO: refatorar vist para declaracao de return
     override fun visitDeclaracaoReturn(ctx: DeclaracaoReturnContext): Valor {
         val valorRetorno = ctx.expressao()?.let { visit(it) } ?: Valor.Nulo
 
@@ -169,6 +176,10 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
             val tipoEsperado = funcaoAtual!!.tipoRetorno
             val tipoAtual = processarResultado(valorRetorno)
             if (tipoEsperado != tipoAtual) {
+                if (valorRetorno is Valor.Objeto) {
+                    //TODO: colocar verificao de superclasses e interfaces...
+                }
+
                 throw RuntimeException("Erro de tipo: função '${funcaoAtual!!.nome}' deve retornar '$tipoEsperado', mas está retornando '$tipoAtual'")
             }
         }
@@ -356,27 +367,6 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
         return esquerda
     }
 
-    private fun saoIguais(esquerda: Valor, direita: Valor): Boolean {
-        return when {
-            esquerda is Valor.Inteiro && direita is Valor.Inteiro -> esquerda.valor == direita.valor
-
-            esquerda is Valor.Real && direita is Valor.Real -> esquerda.valor == direita.valor
-
-            esquerda is Valor.Real && direita is Valor.Inteiro -> esquerda.valor == direita.valor.toDouble()
-
-            esquerda is Valor.Inteiro && direita is Valor.Real -> esquerda.valor.toDouble() == direita.valor
-
-            esquerda is Valor.Texto && direita is Valor.Texto -> esquerda.valor == direita.valor
-
-            esquerda is Valor.Logico && direita is Valor.Logico -> esquerda.valor == direita.valor
-
-            esquerda is Valor.Objeto && direita is Valor.Objeto -> esquerda === direita
-
-            else -> false
-        }
-    }
-
-
     override fun visitComparacao(ctx: ComparacaoContext): Valor {
         var esquerda = visit(ctx.adicao(0))
         for (i in 1 until ctx.adicao().size) {
@@ -404,62 +394,12 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
         return esquerda
     }
 
-
     override fun visitMultiplicacao(ctx: MultiplicacaoContext): Valor {
         var esquerda = visit(ctx.unario(0))
         for (i in 1 until ctx.unario().size) {
             val operador = ctx.getChild(i * 2 - 1).text
             val direita = visit(ctx.unario(i))
-            esquerda = when (operador) {
-                "*" -> when {
-                    esquerda is Valor.Inteiro && direita is Valor.Inteiro -> Valor.Inteiro(esquerda.valor * direita.valor)
-                    esquerda is Valor.Real && direita is Valor.Real -> Valor.Real(esquerda.valor * direita.valor)
-                    esquerda is Valor.Inteiro && direita is Valor.Real -> Valor.Real(esquerda.valor.toDouble() * direita.valor)
-                    esquerda is Valor.Real && direita is Valor.Inteiro -> Valor.Real(esquerda.valor * direita.valor.toDouble())
-                    else -> throw RuntimeException("Operador '*' não suportado para ${esquerda::class.simpleName} e ${direita::class.simpleName}")
-                }
-
-                "/" -> when {
-                    (direita is Valor.Inteiro && direita.valor == 0) || (direita is Valor.Real && direita.valor == 0.0) -> throw RuntimeException(
-                        "Divisão por zero"
-                    )
-
-                    esquerda is Valor.Inteiro && direita is Valor.Inteiro -> if (esquerda.valor % direita.valor == 0) Valor.Inteiro(
-                        esquerda.valor / direita.valor
-                    ) else Valor.Real(esquerda.valor.toDouble() / direita.valor)
-
-                    esquerda is Valor.Real && direita is Valor.Real -> Valor.Real(esquerda.valor / direita.valor)
-                    esquerda is Valor.Inteiro && direita is Valor.Real -> Valor.Real(esquerda.valor.toDouble() / direita.valor)
-                    esquerda is Valor.Real && direita is Valor.Inteiro -> Valor.Real(esquerda.valor / direita.valor.toDouble())
-                    else -> throw RuntimeException("Operador '/' não suportado para ${esquerda::class.simpleName} e ${direita::class.simpleName}")
-                }
-
-                "%" -> when {
-                    esquerda is Valor.Inteiro && direita is Valor.Inteiro -> {
-                        if (direita.valor == 0) throw RuntimeException("Módulo por zero")
-                        Valor.Inteiro(esquerda.valor % direita.valor)
-                    }
-
-                    esquerda is Valor.Real && direita is Valor.Real -> {
-                        if (direita.valor == 0.0) throw RuntimeException("Módulo por zero")
-                        Valor.Real(esquerda.valor % direita.valor)
-                    }
-
-                    esquerda is Valor.Inteiro && direita is Valor.Real -> {
-                        if (direita.valor == 0.0) throw RuntimeException("Módulo por zero")
-                        Valor.Real(esquerda.valor.toDouble() % direita.valor)
-                    }
-
-                    esquerda is Valor.Real && direita is Valor.Inteiro -> {
-                        if (direita.valor == 0) throw RuntimeException("Módulo por zero")
-                        Valor.Real(esquerda.valor % direita.valor.toDouble())
-                    }
-
-                    else -> throw RuntimeException("Operador '%' não suportado para ${esquerda::class.simpleName} e ${direita::class.simpleName}")
-                }
-
-                else -> throw RuntimeException("Operador desconhecido: $operador")
-            }
+            esquerda = processarMultiplicacao(operador, esquerda, direita)
         }
         return esquerda
     }
@@ -495,6 +435,7 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
 
         return null
     }
+
 
     private fun criarObjetoTemporarioDaClasse(nomeClasse: String): Valor.Objeto {
         val classe = global.obterClasse(nomeClasse) ?: throw RuntimeException("Classe não encontrada: $nomeClasse")
@@ -914,7 +855,6 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
         try {
             if (funcao.metodoCallback != null) {
                 val resultado = funcao.metodoCallback.invoke(argumentos)
-
                 if (funcao.tipoRetorno != null) {
                     val tipoEsperado = funcao.tipoRetorno
                     val tipoAtual = processarResultado(resultado)
@@ -922,7 +862,6 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
                         throw RuntimeException("Erro de tipo: função '$nome' deve retornar '$tipoEsperado', mas está retornando '$tipoAtual'")
                     }
                 }
-
                 return resultado
             } else {
                 val decl = funcao.declaracao ?: throw RuntimeException("Declaração de função não disponível: $nome")
@@ -1041,28 +980,6 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
         }
     }
 
-
-    private fun avaliarArgumento(arg: String): Valor {
-        return when {
-            arg.startsWith("\"") && arg.endsWith("\"") -> Valor.Texto(arg.substring(1, arg.length - 1))
-            arg == "verdadeiro" -> Valor.Logico(true)
-            arg == "falso" -> Valor.Logico(false)
-            arg.contains(".") -> try {
-                Valor.Real(arg.toDouble())
-            } catch (e: Exception) {
-                Valor.Nulo
-            }
-
-            arg.all { it.isDigit() } -> try {
-                Valor.Inteiro(arg.toInt())
-            } catch (e: Exception) {
-                Valor.Nulo
-            }
-
-            else -> ambiente.obter(arg)
-        }
-    }
-
     private fun extrairArgumentosDoConstructor(ctx: PrimarioContext): List<Valor> {
         val args = mutableListOf<Valor>()
         if (ctx.childCount > 2 && ctx.getChild(ctx.getChildCount() - 2).text == "(") {
@@ -1070,7 +987,7 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
             if (argText != ")" && argText.isNotEmpty()) {
                 val argumentos = argText.split(",")
                 for (arg in argumentos) {
-                    val valor = avaliarArgumento(arg.trim())
+                    val valor = avaliarArgumento(arg.trim(), ambiente)
                     args.add(valor)
                 }
             }
@@ -1079,6 +996,7 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
         return args
     }
 
+    //TODO: rever uso de recursao...
     private fun inicializarCamposDaClasseBase(objeto: Valor.Objeto, nomeClasseBase: String) {
         val classeBase = global.obterClasse(nomeClasseBase) ?: return
 

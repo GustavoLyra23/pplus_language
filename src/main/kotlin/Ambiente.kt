@@ -10,13 +10,13 @@ class Ambiente(val enclosing: Ambiente? = null) {
 
     private val interfaces = mutableMapOf<String, PortugolPPParser.DeclaracaoInterfaceContext>()
 
+    //referente a instancia que estamos...
     var thisObjeto: Valor.Objeto? = null
 
 
     fun definirInterface(nome: String, declaracao: PortugolPPParser.DeclaracaoInterfaceContext) {
         interfaces[nome] = declaracao
     }
-
 
     fun obterInterface(nome: String): PortugolPPParser.DeclaracaoInterfaceContext? {
         return interfaces[nome] ?: enclosing?.obterInterface(nome)
@@ -52,9 +52,9 @@ class Ambiente(val enclosing: Ambiente? = null) {
         valores[nome] = valor
     }
 
+
     fun obter(nome: String): Valor {
         if (nome == "this" && thisObjeto != null) return thisObjeto!!
-
         val valor = valores[nome]
         if (valor != null) {
             return valor

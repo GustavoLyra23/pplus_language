@@ -10,3 +10,5 @@ enum class LOOP {
         this.valor = valor
     }
 }
+
+

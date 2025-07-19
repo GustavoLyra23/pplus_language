@@ -1,3 +1,4 @@
+import org.gustavolyra.portugolpp.Ambiente
 import org.gustavolyra.portugolpp.Valor
 
 fun extrairValorParaImpressao(valor: Valor): String {
@@ -41,5 +42,26 @@ fun extrairValorString(valor: Valor): String {
         }
 
         else -> valor.toString()
+    }
+}
+
+fun avaliarArgumento(arg: String, ambiente: Ambiente): Valor {
+    return when {
+        arg.startsWith("\"") && arg.endsWith("\"") -> Valor.Texto(arg.substring(1, arg.length - 1))
+        arg == "verdadeiro" -> Valor.Logico(true)
+        arg == "falso" -> Valor.Logico(false)
+        arg.contains(".") -> try {
+            Valor.Real(arg.toDouble())
+        } catch (e: Exception) {
+            Valor.Nulo
+        }
+
+        arg.all { it.isDigit() } -> try {
+            Valor.Inteiro(arg.toInt())
+        } catch (e: Exception) {
+            Valor.Nulo
+        }
+
+        else -> ambiente.obter(arg)
     }
 }

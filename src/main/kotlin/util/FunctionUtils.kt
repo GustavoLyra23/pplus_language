@@ -16,7 +16,6 @@ fun setFuncoes(global: Ambiente) {
         Valor.Nulo
     })
 
-
     global.definir("ler", Valor.Funcao("ler", null) { args ->
         Scanner(System.`in`).nextLine().let { Valor.Texto(it) }
     })
@@ -116,7 +115,7 @@ fun setFuncoes(global: Ambiente) {
     })
 }
 
-fun processarResultado(resultado: Valor): Any {
+fun processarResultado(resultado: Valor): String {
     val tipoAtual = when (resultado) {
         is Valor.Inteiro -> "Inteiro"
         is Valor.Real -> "Real"
@@ -131,5 +130,7 @@ fun processarResultado(resultado: Valor): Any {
     }
     return tipoAtual
 }
+
+
 
 
