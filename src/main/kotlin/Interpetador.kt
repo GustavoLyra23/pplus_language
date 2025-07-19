@@ -117,7 +117,7 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
         global.definirClasse(nomeClasse, ctx)
         return Valor.Nulo
     }
-    
+
     override fun visitDeclaracaoVar(ctx: DeclaracaoVarContext): Valor {
         val nome = ctx.ID().text
         val tipo = ctx.tipo()?.text;
@@ -178,8 +178,10 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
             if (tipoEsperado != tipoAtual) {
                 if (valorRetorno is Valor.Objeto) {
                     //TODO: colocar verificao de superclasses e interfaces...
+                    if (valorRetorno.superClasse == tipoEsperado || valorRetorno.interfaces.contains(tipoEsperado)) throw RetornoException(
+                        valorRetorno
+                    )
                 }
-
                 throw RuntimeException("Erro de tipo: função '${funcaoAtual!!.nome}' deve retornar '$tipoEsperado', mas está retornando '$tipoAtual'")
             }
         }
@@ -483,10 +485,8 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
                 return buscarMetodoNaHierarquia(objetoBase, nomeMetodo)
             }
         }
-
         return null
     }
-
 
     override fun visitChamada(ctx: ChamadaContext): Valor {
         if (ctx.acessoArray() != null) {
@@ -852,6 +852,7 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
         val funcaoAnterior = funcaoAtual
         funcaoAtual = funcao
 
+        //TODO: verificar tipo de retorno antes de executar a funcao..???
         try {
             if (funcao.metodoCallback != null) {
                 val resultado = funcao.metodoCallback.invoke(argumentos)
@@ -859,6 +860,9 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
                     val tipoEsperado = funcao.tipoRetorno
                     val tipoAtual = processarResultado(resultado)
                     if (tipoEsperado != tipoAtual) {
+                        if (resultado is Valor.Objeto) {
+                            if (resultado.superClasse == tipoEsperado || resultado.interfaces.contains(tipoEsperado)) return resultado
+                        }
                         throw RuntimeException("Erro de tipo: função '$nome' deve retornar '$tipoEsperado', mas está retornando '$tipoAtual'")
                     }
                 }
