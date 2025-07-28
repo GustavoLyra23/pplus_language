@@ -1,7 +1,7 @@
 package util.processors
 
 import extrairValorString
-import org.gustavolyra.portugolpp.Valor
+import models.Valor
 
 fun processarAdicao(operador: String?, esquerda: Valor, direita: Valor): Valor {
     return when (operador) {

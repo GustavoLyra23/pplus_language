@@ -1,5 +1,7 @@
-import org.gustavolyra.portugolpp.Ambiente
-import org.gustavolyra.portugolpp.Valor
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import models.Valor
 import java.util.*
 
 fun setFuncoes(global: Ambiente) {
@@ -16,9 +18,59 @@ fun setFuncoes(global: Ambiente) {
         Valor.Nulo
     })
 
+    //TODO: rever implementacao das threads
+    global.definir("executar", Valor.Funcao("executar", null) { args ->
+        if (args.isEmpty() || args[0] !is Valor.Funcao) {
+            throw RuntimeException("Argumento invalido para a funcao.")
+        }
+        val funcaoParaExecutar = args[0] as Valor.Funcao;
+        val argumentosReais = args.drop(1)
+        runBlocking {
+            launch {
+                try {
+                    when {
+                        funcaoParaExecutar.implementacao != null -> {
+                            funcaoParaExecutar.implementacao.invoke(argumentosReais, global)
+                        }
+
+                        funcaoParaExecutar.metodoCallback != null -> {
+                            funcaoParaExecutar.metodoCallback.invoke(argumentosReais)
+                        }
+
+                        else -> {
+                            throw RuntimeException("Função não tem implementação executável")
+                        }
+                    }
+                } catch (e: Exception) {
+                    println("Erro na execucao da thread: ${e.message}")
+                }
+            }.join()
+        }
+        Valor.Nulo
+    })
+
     global.definir("ler", Valor.Funcao("ler", null) { args ->
         Scanner(System.`in`).nextLine().let { Valor.Texto(it) }
     })
+
+    global.definir("dormir", Valor.Funcao("aguardar", null, null, null) { args ->
+        if (args.isEmpty()) {
+            throw RuntimeException("Função aguardar requer um argumento (milissegundos)")
+        }
+
+        val tempo = args[0]
+
+        if (tempo !is Valor.Inteiro) {
+            throw RuntimeException("Argumento deve ser um número inteiro (milissegundos)")
+        }
+
+        runBlocking {
+            delay(tempo.valor.toLong())
+        }
+        Valor.Nulo
+    })
+
+
 
     global.definir("tamanho", Valor.Funcao("tamanho", null) { args ->
         if (args.isEmpty()) {

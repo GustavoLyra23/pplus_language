@@ -1,5 +1,4 @@
-import org.gustavolyra.portugolpp.Ambiente
-import org.gustavolyra.portugolpp.Valor
+import models.Valor
 
 fun extrairValorParaImpressao(valor: Valor): String {
     return when (valor) {

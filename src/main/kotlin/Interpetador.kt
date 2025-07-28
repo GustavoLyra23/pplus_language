@@ -1,10 +1,13 @@
 package org.gustavolyra.portugolpp
 
+import Ambiente
 import avaliarArgumento
+import constants.BASIC_TYPES.Companion.buscarValorOuJogarException
+import constants.LOOP
+import models.Valor
 import org.gustavolyra.portugolpp.PortugolPPParser.*
 import processarResultado
 import setFuncoes
-import util.constants.LOOP
 import util.processors.comparar
 import util.processors.processarAdicao
 import util.processors.processarMultiplicacao
@@ -130,25 +133,13 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
                     throw RuntimeException("Tipo de variável '$tipo' não corresponde ao tipo do objeto '$nomeClasse'")
                 }
             } else {
-                //TODO: passar isso para um ENUM
-                val basicType = when (valor) {
-                    is Valor.Inteiro -> "Inteiro"
-                    is Valor.Real -> "Real"
-                    is Valor.Texto -> "Texto"
-                    is Valor.Logico -> "Logico"
-                    is Valor.Nulo -> "Nulo"
-                    else -> null
-                }
-
-                if (basicType != tipo) {
-                    throw RuntimeException("Tipo de variável '$nome' não corresponde ao tipo esperado '$tipo'")
-                }
+                buscarValorOuJogarException(valor);
             }
         }
         ambiente.definir(nome, valor)
         return Valor.Nulo
     }
-
+    
     override fun visitDeclaracaoFuncao(ctx: DeclaracaoFuncaoContext): Valor {
         val nome = ctx.ID().text
         val tipoRetorno = ctx.tipo()?.text
@@ -156,9 +147,45 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
             throw RuntimeException("Tipo de retorno inválido: $tipoRetorno")
         }
 
-        ambiente.definir(nome, Valor.Funcao(nome, ctx, tipoRetorno))
+        val implementacao: (List<Valor>, Ambiente) -> Valor = { argumentos, ambienteGlobal ->
+            val numParamsDeclarados = ctx.listaParams()?.param()?.size ?: 0
+            if (argumentos.size > numParamsDeclarados) {
+                throw RuntimeException("Função '$nome' recebeu ${argumentos.size} parâmetros, mas espera $numParamsDeclarados")
+            }
+
+            val funcaoAmbiente = Ambiente(ambienteGlobal)
+
+            ctx.listaParams()?.param()?.forEachIndexed { i, param ->
+                if (i < argumentos.size) {
+                    funcaoAmbiente.definir(param.ID().text, argumentos[i])
+                }
+            }
+
+            val ambienteAnterior = ambiente
+            ambiente = funcaoAmbiente
+
+            try {
+                visit(ctx.bloco())
+                Valor.Nulo
+            } catch (retorno: RetornoException) {
+                retorno.valor
+            } finally {
+                ambiente = ambienteAnterior
+            }
+        }
+
+        ambiente.definir(
+            nome, Valor.Funcao(
+                nome = nome,
+                // Manter para debug/reflexão
+                declaracao = ctx,
+                tipoRetorno = tipoRetorno,
+                implementacao = implementacao
+            )
+        )
         return Valor.Nulo
     }
+
 
     //TODO: refatorar validacao...
     private fun retornoFuncaoInvalido(tipoRetorno: String?): Boolean {
@@ -213,6 +240,7 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
         if (ctx.logicaOu() != null) {
             return visit(ctx.logicaOu())
         }
+
         //TODO: rever uso da variavel valor...
         //val valor = visit(ctx.expressao())
         if (ctx.ID() != null) {
@@ -456,7 +484,6 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
                 ambiente = oldAmbiente
                 result
             } ?: Valor.Nulo
-
             objeto.campos[nomeCampo] = valor
         }
 

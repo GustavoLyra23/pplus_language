@@ -1,4 +1,4 @@
-package util.constants
+package constants
 
 enum class LOOP {
 

@@ -1,6 +1,7 @@
-package org.gustavolyra.portugolpp
+package models
 
-import org.gustavolyra.portugolpp.PortugolPPParser.DeclaracaoFuncaoContext
+import Ambiente
+import org.gustavolyra.portugolpp.PortugolPPParser
 
 sealed class Valor {
 
@@ -32,8 +33,12 @@ sealed class Valor {
 
     data class Funcao(
         val nome: String,
-        val declaracao: DeclaracaoFuncaoContext? = null,
+        //TODO: repensar estrategia de uso desta variavel...
+        val declaracao: PortugolPPParser.DeclaracaoFuncaoContext? = null,
         val tipoRetorno: String? = null,
+        //novo campo..
+        val implementacao: ((List<Valor>, Ambiente) -> Valor)? = null,
+        // campo para funcoes nativas
         val metodoCallback: ((List<Valor>) -> Valor)? = null
     ) : Valor()
 

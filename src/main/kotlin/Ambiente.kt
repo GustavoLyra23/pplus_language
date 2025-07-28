@@ -1,6 +1,6 @@
-package org.gustavolyra.portugolpp
-
+import org.gustavolyra.portugolpp.PortugolPPParser
 import org.gustavolyra.portugolpp.PortugolPPParser.DeclaracaoClasseContext
+import models.Valor
 
 class Ambiente(val enclosing: Ambiente? = null) {
     //tentando imitar o prototype do js
@@ -12,7 +12,6 @@ class Ambiente(val enclosing: Ambiente? = null) {
 
     //referente a instancia que estamos...
     var thisObjeto: Valor.Objeto? = null
-
 
     fun definirInterface(nome: String, declaracao: PortugolPPParser.DeclaracaoInterfaceContext) {
         interfaces[nome] = declaracao

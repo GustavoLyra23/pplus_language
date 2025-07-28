@@ -1,6 +1,6 @@
 package util.processors
 
-import org.gustavolyra.portugolpp.Valor
+import models.Valor
 
 fun comparar(operador: String, esquerda: Valor, direita: Valor): Valor {
     return when {
