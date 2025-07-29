@@ -2,6 +2,7 @@ plugins {
     id 'org.jetbrains.kotlin.jvm' version '2.1.20'
     id 'antlr'
     id 'com.github.johnrengelman.shadow' version '8.1.1'
+    id 'edu.sc.seis.launch4j' version '2.5.0'
 }
 
 group = 'org.gustavolyra'
@@ -16,7 +17,6 @@ dependencies {
     antlr 'org.antlr:antlr4:4.13.1'
     implementation 'org.antlr:antlr4-runtime:4.13.1'
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
-
 }
 
 generateGrammarSource {
@@ -50,10 +50,22 @@ kotlin {
 }
 
 shadowJar {
-    manifest {
-        attributes 'Main-Class': 'MainKt'
-    }
     archiveBaseName.set('portugolpp')
     archiveClassifier.set('')
     archiveVersion.set('')
+    manifest { attributes 'Main-Class': 'MainKt' }
+}
+
+launch4j {
+    jarTask = tasks.shadowJar
+    copyConfigurable = []
+    mainClassName = 'MainKt'
+    outfile = 'portugolpp.exe'
+    headerType = 'console'
+    jreMinVersion = '21'
+
+}
+
+tasks.named('launch4j') {
+    dependsOn shadowJar
 }

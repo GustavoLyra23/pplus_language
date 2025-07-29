@@ -29,6 +29,7 @@ sealed class Valor {
 
     data class Interface(val nome: String, val assinaturas: Map<String, AssinaturaMetodo>) : Valor()
 
+    //TODO: rever uso da AssinaturaMetodo
     class AssinaturaMetodo(val nome: String, val parametros: List<Param>, val tipoRetorno: String? = null)
 
     data class Funcao(

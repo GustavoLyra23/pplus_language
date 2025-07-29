@@ -139,7 +139,7 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
         ambiente.definir(nome, valor)
         return Valor.Nulo
     }
-    
+
     override fun visitDeclaracaoFuncao(ctx: DeclaracaoFuncaoContext): Valor {
         val nome = ctx.ID().text
         val tipoRetorno = ctx.tipo()?.text

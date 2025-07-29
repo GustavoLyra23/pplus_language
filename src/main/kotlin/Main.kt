@@ -5,11 +5,12 @@ import org.gustavolyra.portugolpp.PortugolPPParser
 import java.io.File
 import kotlin.system.exitProcess
 
-fun main(args: Array<String>) {
+fun main() {
+    println("Iniciando Portugol++")
     when {
-        args.isEmpty() -> modoInterativo()
-        args.first() == "run" && args.size > 1 -> executarArquivo(args[1])
-        else -> mostrarAjuda()
+//        args.getOrNull(0) == "run" && args.size > 1 -> executarArquivo(args[1])
+        //REPL
+        else -> modoInterativo()
     }
 }
 
