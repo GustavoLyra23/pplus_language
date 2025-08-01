@@ -29,30 +29,11 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
     private var funcaoAtual: Valor.Funcao? = null
 
     private val arquivosImportados = mutableSetOf<String>()
-//    private val caminhosProjeto = mutableListOf("./", "src/", "lib/")
 
     //setando funcoes nativas da linguagem...
     init {
         setFuncoes(global)
     }
-
-//    fun adicionarCaminhoProjeto(caminho: String) {
-//        caminhosProjeto.add(caminho)
-//    }
-
-//    private fun encontrarArquivo(
-//        nomeArquivo
-//        : String
-//    ): String? {
-//        for (caminho in caminhosProjeto) {
-//            val arquivo = File("$caminho/$nomeArquivo$EXTENSAO")
-//            println("arquivo -> $arquivo")
-//            if (arquivo.exists()) {
-//                return arquivo.absolutePath
-//            }
-//        }
-//        return null
-//    }
 
     override fun visitImportarDeclaracao(ctx: ImportarDeclaracaoContext): Valor? {
         val nomeArquivo = ctx.TEXTO_LITERAL().text.removeSurrounding("\"")

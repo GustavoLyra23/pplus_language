@@ -1,3 +1,3 @@
 package constants
 
-val EXTENSAO = ".pplus";
+const val EXTENSAO = ".pplus";
