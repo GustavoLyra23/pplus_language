@@ -1,3 +1,4 @@
+import constants.EXTENSAO
 import org.antlr.v4.runtime.*
 import org.gustavolyra.portugolpp.Interpretador
 import org.gustavolyra.portugolpp.PortugolPPLexer
@@ -9,7 +10,7 @@ fun main() {
     println("Iniciando Portugol++")
     when {
 //        args.getOrNull(0) == "run" && args.size > 1 -> executarArquivo(args[1])
-        //REPL
+        //REPL direto...
         else -> modoInterativo()
     }
 }
@@ -36,7 +37,7 @@ fun modoInterativo() {
 fun executarArquivo(caminho: String) {
     try {
         val arquivo = File(caminho)
-        if (validarArquivo(arquivo)) return
+        if (!validarArquivo(arquivo)) return
         val fileData = arquivo.readText()
         executarPortugolPP(fileData)
     } catch (e: Exception) {
@@ -46,7 +47,7 @@ fun executarArquivo(caminho: String) {
 
 fun mostrarAjuda() {
     println("Uso do Portugol++ CLI:")
-    println("  Sem argumentos   - Iniciar modo interativo")
+    println("  Sem argumentos   - Iniciar modo interativo REPL")
     println("  run <arquivo>    - Executar um arquivo Portugol++")
 }
 
@@ -95,8 +96,8 @@ fun validarArquivo(arquivo: File): Boolean {
         println("Erro: Arquivo não encontrado!")
         return false
     }
-    if (arquivo.name.endsWith(".pplus")) {
-        println("Formato do arquivo invalido...")
+    if (!arquivo.name.endsWith(EXTENSAO)) {
+        println("Formato do arquivo inválido! Use arquivos .pplus")
         return false
     }
     return true
