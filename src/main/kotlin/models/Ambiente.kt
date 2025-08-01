@@ -1,12 +1,11 @@
+package models
+
 import org.gustavolyra.portugolpp.PortugolPPParser
-import org.gustavolyra.portugolpp.PortugolPPParser.DeclaracaoClasseContext
-import models.Valor
 
 class Ambiente(val enclosing: Ambiente? = null) {
-    //tentando imitar o prototype do js
     private val valores = mutableMapOf<String, Valor>()
 
-    private val classes = mutableMapOf<String, DeclaracaoClasseContext>()
+    private val classes = mutableMapOf<String, PortugolPPParser.DeclaracaoClasseContext>()
 
     private val interfaces = mutableMapOf<String, PortugolPPParser.DeclaracaoInterfaceContext>()
 
@@ -21,7 +20,7 @@ class Ambiente(val enclosing: Ambiente? = null) {
         return interfaces[nome] ?: enclosing?.obterInterface(nome)
     }
 
-    fun getInterfaces(classeContext: DeclaracaoClasseContext): List<String> {
+    fun getInterfaces(classeContext: PortugolPPParser.DeclaracaoClasseContext): List<String> {
         val result = mutableListOf<String>()
         var foundImplements = false
         for (i in 0 until classeContext.childCount) {
@@ -38,7 +37,7 @@ class Ambiente(val enclosing: Ambiente? = null) {
         return result
     }
 
-    fun getSuperClasse(classeContext: DeclaracaoClasseContext): String? {
+    fun getSuperClasse(classeContext: PortugolPPParser.DeclaracaoClasseContext): String? {
         for (i in 0 until classeContext.childCount) {
             if (classeContext.getChild(i).text == "estende" && i + 1 < classeContext.childCount) {
                 return classeContext.getChild(i + 1).text
@@ -46,6 +45,7 @@ class Ambiente(val enclosing: Ambiente? = null) {
         }
         return null
     }
+
 
     fun definir(nome: String, valor: Valor) {
         valores[nome] = valor
@@ -73,11 +73,11 @@ class Ambiente(val enclosing: Ambiente? = null) {
         return Valor.Nulo
     }
 
-    fun definirClasse(nome: String, declaracao: DeclaracaoClasseContext) {
+    fun definirClasse(nome: String, declaracao: PortugolPPParser.DeclaracaoClasseContext) {
         classes[nome] = declaracao
     }
 
-    fun obterClasse(nome: String): DeclaracaoClasseContext? {
+    fun obterClasse(nome: String): PortugolPPParser.DeclaracaoClasseContext? {
         return classes[nome] ?: enclosing?.obterClasse(nome)
     }
 

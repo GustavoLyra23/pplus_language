@@ -1,36 +1,126 @@
 package org.gustavolyra.portugolpp
 
-import Ambiente
 import avaliarArgumento
-import constants.BASIC_TYPES.Companion.buscarValorOuJogarException
-import constants.LOOP
+import models.Ambiente
 import models.Valor
+import models.enums.BASIC_TYPES.Companion.buscarValorOuJogarException
+import models.enums.LOOP
+import org.antlr.v4.runtime.CharStreams
+import org.antlr.v4.runtime.CommonTokenStream
 import org.gustavolyra.portugolpp.PortugolPPParser.*
 import processarResultado
+import processors.comparar
+import processors.processarAdicao
+import processors.processarMultiplicacao
+import processors.saoIguais
 import setFuncoes
-import util.processors.comparar
-import util.processors.processarAdicao
-import util.processors.processarMultiplicacao
-import util.processors.saoIguais
+import java.io.File
+
 
 @Suppress("REDUNDANT_OVERRIDE", "ABSTRACT_MEMBER_NOT_IMPLEMENTED")
 class Interpretador : PortugolPPBaseVisitor<Valor>() {
-    /** Ambiente global que contém todas as definições de classes, interfaces e funções globais */
-    private val global = Ambiente()
+    /** models.Ambiente global que contém todas as definições de classes, interfaces e funções globais */
+    private var global = Ambiente()
 
-    /** Ambiente atual de execução, pode ser o global ou um escopo local */
+    /** models.Ambiente atual de execução, pode ser o global ou um escopo local */
     private var ambiente = global
 
     /** Referência para a função atualmente em execução (usado para verificação de tipos de retorno) */
     private var funcaoAtual: Valor.Funcao? = null
+
+    private val arquivosImportados = mutableSetOf<String>()
+//    private val caminhosProjeto = mutableListOf("./", "src/", "lib/")
 
     //setando funcoes nativas da linguagem...
     init {
         setFuncoes(global)
     }
 
+//    fun adicionarCaminhoProjeto(caminho: String) {
+//        caminhosProjeto.add(caminho)
+//    }
+
+//    private fun encontrarArquivo(
+//        nomeArquivo
+//        : String
+//    ): String? {
+//        for (caminho in caminhosProjeto) {
+//            val arquivo = File("$caminho/$nomeArquivo$EXTENSAO")
+//            println("arquivo -> $arquivo")
+//            if (arquivo.exists()) {
+//                return arquivo.absolutePath
+//            }
+//        }
+//        return null
+//    }
+
+    override fun visitImportarDeclaracao(ctx: ImportarDeclaracaoContext): Valor? {
+        val nomeArquivo = ctx.TEXTO_LITERAL().text.removeSurrounding("\"")
+        processarImport(nomeArquivo)
+        return Valor.Nulo
+    }
+
+
+    private fun processarDeclaracoesDoArquivo(tree: ProgramaContext) {
+        tree.declaracao().forEach { declaracao ->
+            declaracao.declaracaoInterface()?.let {
+                visitDeclaracaoInterface(it)
+            }
+        }
+
+        tree.declaracao()?.forEach { declaracao ->
+            declaracao.declaracaoClasse()?.let {
+                visitDeclaracaoClasse(it)
+            }
+        }
+
+        tree.declaracao()?.forEach { declaracao ->
+            declaracao.declaracaoFuncao()?.let {
+                visitDeclaracaoFuncao(it)
+            }
+        }
+
+        tree.declaracao()?.forEach { declaracao ->
+            declaracao.declaracaoVar()?.let {
+                visitDeclaracaoVar(it)
+            }
+        }
+    }
+
+
+    fun processarImport(nomeArquivo: String) {
+        val caminhoCompleto = nomeArquivo
+        println("caminhoCompleto -> $caminhoCompleto")
+        if (arquivosImportados.contains(caminhoCompleto)) {
+            println("Arquivo ja importado...")
+            return
+        }
+
+        arquivosImportados.add(caminhoCompleto)
+
+        try {
+            val conteudo = File(caminhoCompleto).readText()
+            val lexer = PortugolPPLexer(CharStreams.fromString(conteudo))
+            val tokens = CommonTokenStream(lexer)
+            val parser = PortugolPPParser(tokens)
+            val arvore = parser.programa()
+
+            arvore.importarDeclaracao().forEach { import ->
+                visitImportarDeclaracao(import)
+            }
+
+            processarDeclaracoesDoArquivo(arvore)
+        } catch (e: Exception) {
+            throw RuntimeException()
+        }
+    }
+
     fun interpretar(tree: ProgramaContext) {
         try {
+            tree.importarDeclaracao()?.forEach { import ->
+                visitImportarDeclaracao(import)
+            }
+
             visitInterfaces(tree)
             visitClasses(tree)
             //visitando outras declaracoes mais genericas...
@@ -123,7 +213,7 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
 
     override fun visitDeclaracaoVar(ctx: DeclaracaoVarContext): Valor {
         val nome = ctx.ID().text
-        val tipo = ctx.tipo()?.text;
+        val tipo = ctx.tipo()?.text
         val valor = ctx.expressao()?.let { visit(it) } ?: Valor.Nulo
 
         if (tipo != null) {
@@ -178,9 +268,7 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
             nome, Valor.Funcao(
                 nome = nome,
                 // Manter para debug/reflexão
-                declaracao = ctx,
-                tipoRetorno = tipoRetorno,
-                implementacao = implementacao
+                declaracao = ctx, tipoRetorno = tipoRetorno, implementacao = implementacao
             )
         )
         return Valor.Nulo
@@ -654,7 +742,7 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
             } catch (_: BreakException) {
                 break
             } catch (_: ContinueException) {
-                //TODO: Esta parte existe para processar o continue porem processando o incremental do loop -> visit(ctx.expressao(1)),refatorar isso no futuro...
+                // Isso existe para validar a logica dentro do loop antes de dar o continue...
                 val condicao = visit(ctx.expressao(0))
                 if (condicao !is Valor.Logico) {
                     throw RuntimeException("Condição do 'para' deve ser um valor lógico")

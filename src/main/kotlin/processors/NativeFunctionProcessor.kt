@@ -1,6 +1,7 @@
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import models.Ambiente
 import models.Valor
 import java.util.*
 
@@ -69,8 +70,6 @@ fun setFuncoes(global: Ambiente) {
         }
         Valor.Nulo
     })
-
-
 
     global.definir("tamanho", Valor.Funcao("tamanho", null) { args ->
         if (args.isEmpty()) {

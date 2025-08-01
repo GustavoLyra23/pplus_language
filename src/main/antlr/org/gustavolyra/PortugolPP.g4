@@ -1,7 +1,12 @@
 grammar PortugolPP;
 
 programa
-    : declaracao* EOF
+    : importarDeclaracao* declaracao* EOF
+    ;
+
+
+importarDeclaracao
+    : 'importar' TEXTO_LITERAL ';'
     ;
 
 declaracao
@@ -20,6 +25,7 @@ declaracao
     | declaracaoContinue
     | declaracaoInterface
     ;
+
 
 assinaturaMetodo
     : 'funcao' ID '(' listaParams? ')' (':' tipo)? ';'
