@@ -138,7 +138,7 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
                 //TODO: refatorar.... os argumentos da funcao main serao ignorados...
                 chamadaFuncao("main", emptyList())
             }
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             throw MainExecutionException("Falha durante a execução da função main")
         }
     }
