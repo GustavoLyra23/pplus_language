@@ -83,8 +83,5 @@ java -jar build/libs/portugolpp.jar programa.ppp
 ### Status
 
 <img src="https://img.shields.io/badge/status-desenvolvimento-green.svg" alt="Status" />
-  <img src="https://img.shields.io/badge/versão-1.0--SNAPSHOT-blue.svg" alt="Versão" />
-  <img src="https://img.shields.io/badge/Java-21-orange.svg" alt="Versão Java" />
-  <img src="https://img.shields.io/badge/Kotlin-2.1.20-purple.svg" alt="Versão Kotlin" />
 
 
