@@ -3,6 +3,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import models.Ambiente
 import models.Valor
+import org.gustavolyra.portugolpp.ArquivoException
 import processors.FileIOProcessor.escreverArquivo
 import processors.FileIOProcessor.lerArquivo
 import java.util.*
@@ -85,7 +86,7 @@ fun setFuncoes(global: Ambiente) {
         try {
             Valor.Texto(lerArquivo(argVal.valor))
         } catch (e: Exception) {
-            throw RuntimeException("Erro ao ler arquivo '${argVal.valor}': ${e.message}")
+            throw ArquivoException("Erro ao ler arquivo '${argVal.valor}': ${e.message}")
         }
     })
 
@@ -97,7 +98,6 @@ fun setFuncoes(global: Ambiente) {
         require(path is Valor.Texto && data is Valor.Texto) {
             "Os dois primeiros argumentos devem ser do tipo Texto"
         }
-
         when (append) {
             null -> escreverArquivo(path.valor, data.valor)
             is Valor.Logico -> escreverArquivo(

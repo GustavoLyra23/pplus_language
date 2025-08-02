@@ -51,7 +51,6 @@ class Ambiente(val enclosing: Ambiente? = null) {
         valores[nome] = valor
     }
 
-
     fun obter(nome: String): Valor {
         if (nome == "this" && thisObjeto != null) return thisObjeto!!
         val valor = valores[nome]

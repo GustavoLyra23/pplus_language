@@ -1,7 +1,9 @@
+<h1 align="center">Linguagem P++</h1>
+
 ## Sobre o Projeto
 
-<img src="./asset/arrow.png" alt="P++ Programming Language Logo" width="20" align="middle"> P++ foi destinado a falantes de português, facilitando o aprendizado de programação através de uma sintaxe semelhante ao
-Portugol, mas com recursos modernos de linguagens orientadas a objetos.
+P++ é uma linguagem de programação destinada a falantes de português, facilitando o aprendizado de programação através
+de uma sintaxe semelhante ao Portugol, mas com recursos modernos de linguagens orientadas a objetos.
 
 ## Características
 
@@ -9,21 +11,80 @@ Portugol, mas com recursos modernos de linguagens orientadas a objetos.
 - **Programação Orientada a Objetos** com classes, herança e interfaces
 - **Tipagem dinâmica** para facilitar o aprendizado
 - **Estruturas de controle** (condicionais, loops)
-- **Funções e métodos** com parâmetros e retornos
-- **Entrada e saída** através de funções nativas
+- **Funções e métodos** com parâmetros e valores de retorno
+- **Funções nativas de E/S** para operações de entrada e saída
 - **Coleções** como listas e mapas
+- **Processamento de arquivos** com bibliotecas nativas C++
+- **Suporte a threads** para execução assíncrona
+- **Suporte a multiplos modulos** import de outros arquivos
 
-## Requisitos
+## Requisitos do Sistema
 
 - Java JDK 21 ou superior
 - Gradle 8.0 ou superior
+- CMake (para compilação das bibliotecas nativas)
 
 ## Documentação
 
-<img src="./asset/arrow.png" alt="P++ Programming Language Logo" width="20" align="middle">  https://deepwiki.com/GustavoLyra23/PPlus
+- **Documentação da Engine do Interpretador**: [P++ Docs](https://deepwiki.com/GustavoLyra23/PPlus)
+- **Site Oficial do P++**: [Em desenvolvimento]
 
 ## Instalação
 
-Você pode clonar o repositório e construir o projeto usando Gradle:
+### Clonar o repositório
 
-<img src="https://img.shields.io/badge/status-development-green.svg" alt="Status" />
+```bash
+git clone <url-do-repositorio>
+cd pplus
+``` 
+
+## Compilar o projeto
+
+#### Compilar bibliotecas nativas
+
+```bash
+./gradlew buildNative
+```
+
+#### Compilar projeto principal
+
+```bash
+./gradlew build
+```
+
+#### Criar JAR executável
+
+```bash
+./gradlew shadowJar
+```
+
+#### Gerar executável Windows (opcional)
+
+```bash
+./gradlew launch4j 
+```
+
+#### Executar um programa P++
+
+Usando JAR
+
+```bash
+java -jar build/libs/portugolpp.jar programa.ppp
+```
+
+#### Usando executável Windows
+
+```bash
+./portugolpp.exe programa.ppp
+``` 
+
+<hr/>
+
+### Status
+
+<img src="https://img.shields.io/badge/status-desenvolvimento-green.svg" alt="Status" />
+  <img src="https://img.shields.io/badge/versão-1.0--SNAPSHOT-blue.svg" alt="Versão" />
+  <img src="https://img.shields.io/badge/Java-21-orange.svg" alt="Versão Java" />
+  <img src="https://img.shields.io/badge/Kotlin-2.1.20-purple.svg" alt="Versão Kotlin" />
+
+
