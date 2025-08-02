@@ -16,19 +16,19 @@ dependencies {
     testImplementation 'org.jetbrains.kotlin:kotlin-test'
     antlr 'org.antlr:antlr4:4.13.1'
     implementation 'org.antlr:antlr4-runtime:4.13.1'
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3'
 }
 
 generateGrammarSource {
     maxHeapSize = "64m"
     arguments += ['-visitor', '-package', 'org.gustavolyra.portugolpp']
-    outputDirectory = file("$buildDir/generated-src/antlr/main")
+    outputDirectory = file("${layout.buildDirectory.get()}/generated-src/antlr/main")
 }
 
 sourceSets {
     main {
         java {
-            srcDir "$buildDir/generated-src/antlr/main"
+            srcDir "${layout.buildDirectory.get()}/generated-src/antlr/main"
         }
     }
 }
@@ -38,7 +38,7 @@ compileKotlin {
 }
 
 clean {
-    delete "$buildDir/generated-src"
+    delete "${layout.buildDirectory.get()}/generated-src"
 }
 
 test {
@@ -53,7 +53,12 @@ shadowJar {
     archiveBaseName.set('portugolpp')
     archiveClassifier.set('')
     archiveVersion.set('')
-    manifest { attributes 'Main-Class': 'MainKt' }
+    manifest {
+        attributes 'Main-Class': 'MainKt'
+    }
+    from("${layout.buildDirectory.get()}/resources/main/native") {
+        into("native")
+    }
 }
 
 launch4j {
@@ -63,9 +68,45 @@ launch4j {
     outfile = 'portugolpp.exe'
     headerType = 'console'
     jreMinVersion = '21'
-
 }
 
 tasks.named('launch4j') {
     dependsOn shadowJar
+}
+
+def nativeBuildDir = file("${layout.buildDirectory.get()}/native")
+
+tasks.register("buildNative") {
+    doLast {
+        nativeBuildDir.mkdirs()
+        exec {
+            workingDir nativeBuildDir
+            commandLine "cmake", "${projectDir}", "-DCMAKE_BUILD_TYPE=Release"
+        }
+
+        exec {
+            workingDir nativeBuildDir
+            if (org.gradle.internal.os.OperatingSystem.current().isWindows()) {
+                commandLine "cmake", "--build", ".", "--config", "Release"
+            } else {
+                commandLine "cmake", "--build", "."
+            }
+        }
+    }
+}
+
+tasks.register("copyNativeLib", Copy) {
+    dependsOn "buildNative"
+    from {
+        if (org.gradle.internal.os.OperatingSystem.current().isWindows()) {
+            fileTree(dir: nativeBuildDir, include: ["**/Release/portugolpp.dll", "**/portugolpp.dll"])
+        } else {
+            fileTree(dir: nativeBuildDir, include: ["**/libportugolpp.so"])
+        }
+    }
+    into("${layout.buildDirectory.get()}/resources/main/native")
+}
+
+tasks.named("processResources") {
+    dependsOn("copyNativeLib")
 }

@@ -3,6 +3,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import models.Ambiente
 import models.Valor
+import processors.FileIOProcessor.escreverArquivo
+import processors.FileIOProcessor.lerArquivo
 import java.util.*
 
 fun setFuncoes(global: Ambiente) {
@@ -24,7 +26,7 @@ fun setFuncoes(global: Ambiente) {
         if (args.isEmpty() || args[0] !is Valor.Funcao) {
             throw RuntimeException("Argumento invalido para a funcao.")
         }
-        val funcaoParaExecutar = args[0] as Valor.Funcao;
+        val funcaoParaExecutar = args[0] as Valor.Funcao
         val argumentosReais = args.drop(1)
         runBlocking {
             launch {
@@ -67,6 +69,42 @@ fun setFuncoes(global: Ambiente) {
 
         runBlocking {
             delay(tempo.valor.toLong())
+        }
+        Valor.Nulo
+    })
+
+    global.definir("lerArquivo", Valor.Funcao("lerArquivo", null) { args ->
+        if (args.isEmpty()) throw RuntimeException("Função lerArquivo requer um argumento (caminho do arquivo)")
+        if (args.size > 1) throw RuntimeException("Função lerArquivo aceita apenas um argumento")
+
+        val argVal = args[0]
+        if (argVal !is Valor.Texto) {
+            throw RuntimeException("Argumento deve ser um texto (caminho do arquivo)")
+        }
+
+        try {
+            Valor.Texto(lerArquivo(argVal.valor))
+        } catch (e: Exception) {
+            throw RuntimeException("Erro ao ler arquivo '${argVal.valor}': ${e.message}")
+        }
+    })
+
+    global.definir("escreverArquivo", Valor.Funcao("escreverArquivo", null) { args ->
+        require(args.size in 2..3) { "Função escreverArquivo requer 2 ou 3 argumentos" }
+        val (path, data) = args.take(2)
+        val append = args.getOrNull(2)
+
+        require(path is Valor.Texto && data is Valor.Texto) {
+            "Os dois primeiros argumentos devem ser do tipo Texto"
+        }
+
+        when (append) {
+            null -> escreverArquivo(path.valor, data.valor)
+            is Valor.Logico -> escreverArquivo(
+                path.valor, data.valor, append.valor
+            )
+
+            else -> throw RuntimeException("O terceiro argumento deve ser do tipo Logico")
         }
         Valor.Nulo
     })
