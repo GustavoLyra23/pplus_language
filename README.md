@@ -5,18 +5,18 @@ Portugol, mas com recursos modernos de linguagens orientadas a objetos.
 
 ## Características
 
-- **Sintaxe amigável** em português baseada em Portugol
-- **Programação Orientada a Objetos** com classes, herança e interfaces
-- **Tipagem dinâmica** para facilitar o aprendizado
-- **Estruturas de controle** (condicionais, loops)
-- **Funções e métodos** com parâmetros e retornos
-- **Entrada e saída** através de funções nativas
-- **Coleções** como listas e mapas
+-> **Sintaxe amigável** em português baseada em Portugol
+-> **Programação Orientada a Objetos** com classes, herança e interfaces
+-> **Tipagem dinâmica** para facilitar o aprendizado
+-> **Estruturas de controle** (condicionais, loops)
+-> **Funções e métodos** com parâmetros e retornos
+-> **Entrada e saída** através de funções nativas
+-> **Coleções** como listas e mapas
 
 ## Requisitos
 
-- Java JDK 21 ou superior
-- Gradle 8.0 ou superior
+-> Java JDK 21 ou superior
+-> Gradle 8.0 ou superior
 
 ## Documentação
 
