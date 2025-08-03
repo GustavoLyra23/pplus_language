@@ -28,6 +28,10 @@ fun extrairValorParaImpressao(valor: Valor): String {
 
 fun extrairValorString(valor: Valor): String {
     return when (valor) {
+        is Valor.Inteiro -> valor.valor.toString()
+        is Valor.Real -> valor.valor.toString()
+        is Valor.Logico -> if (valor.valor) "verdadeiro" else "falso"
+        is Valor.Nulo -> "nulo"
         is Valor.Texto -> valor.valor
         is Valor.Lista -> {
             val elementos = valor.elementos.map { extrairValorString(it) }
@@ -52,7 +56,7 @@ fun avaliarArgumento(arg: String, ambiente: Ambiente): Valor {
         arg == "falso" -> Valor.Logico(false)
         arg.contains(".") -> try {
             Valor.Real(arg.toDouble())
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             Valor.Nulo
         }
 
