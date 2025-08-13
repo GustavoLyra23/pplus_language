@@ -27,7 +27,7 @@ de uma sintaxe semelhante ao Portugol, mas com recursos modernos de linguagens o
 ## Documentação
 
 - **Documentação da Engine do Interpretador**: [P++ Docs](https://deepwiki.com/GustavoLyra23/PPlus)
-- **Site Oficial do P++**: [Em desenvolvimento]
+- **Site Oficial do P++**: [Web Page](https://gustavolyra23.github.io/pplus_web/index.html)
 
 ## Instalação
 
