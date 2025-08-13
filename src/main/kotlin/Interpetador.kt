@@ -19,10 +19,10 @@ import java.io.File
 
 @Suppress("REDUNDANT_OVERRIDE", "ABSTRACT_MEMBER_NOT_IMPLEMENTED")
 class Interpretador : PortugolPPBaseVisitor<Valor>() {
-    /** models.Ambiente global que contém todas as definições de classes, interfaces e funções globais */
+    /** Ambiente global que contém todas as definições de classes, interfaces e funções globais */
     private var global = Ambiente()
 
-    /** models.Ambiente atual de execução, pode ser o global ou um escopo local */
+    /** Ambiente atual de execução, pode ser o global ou um escopo local */
     private var ambiente = global
 
     /** Referência para a função atualmente em execução (usado para verificação de tipos de retorno) */
@@ -305,6 +305,7 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
 
     override fun visitExpressao(ctx: ExpressaoContext): Valor = visit(ctx.getChild(0))
 
+    //TODO: tipos primitivos nao tem validacao, posso associar um `var a: Inteiro = "ab"`
     override fun visitAtribuicao(ctx: AtribuicaoContext): Valor {
         if (ctx.logicaOu() != null) {
             return visit(ctx.logicaOu())
@@ -315,6 +316,7 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
         if (ctx.ID() != null) {
             val nome = ctx.ID().text
             val valor = visit(ctx.expressao())
+            //TODO: validar tipo aqui
             ambiente.atualizarOuDefinir(nome, valor)
             return valor
         }
@@ -385,6 +387,7 @@ class Interpretador : PortugolPPBaseVisitor<Valor>() {
                     }
                 }
 
+                //MAPA
                 is Valor.Mapa -> {
                     val chave = visit(acessoArray.expressao(0))
                     container.elementos[chave] = valor
