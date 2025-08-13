@@ -1,7 +1,11 @@
+<div align="center">
+<img width="240" src="./asset/ppcube.png" alt="ppcube" />
+<br />
+<img align="center" src="https://img.shields.io/badge/status-desenvolvimento-green.svg" alt="Status" />
+<hr/>
+</div>
+
 ## Sobre o Projeto
-
-<img src="https://img.shields.io/badge/status-desenvolvimento-green.svg" alt="Status" />
-
 P++ é uma linguagem de programação destinada a falantes de português, facilitando o aprendizado de programação através
 de uma sintaxe semelhante ao Portugol, mas com recursos modernos de linguagens orientadas a objetos.
 
