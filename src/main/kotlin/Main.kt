@@ -25,7 +25,7 @@ fun modoInterativo() {
         when {
             input == "exit" -> exitProcess(0)
             input.startsWith("run ") -> {
-                val caminho = input.substring(4)
+                val caminho = input.substring(4).trim()
                 executarArquivo(caminho)
             }
 
