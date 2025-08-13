@@ -6,7 +6,7 @@
 </div>
 
 ## Sobre o Projeto
-P++ é uma linguagem de programação destinada a falantes de português, facilitando o aprendizado de programação através
+_P++_ é uma linguagem de programação destinada a falantes de português, facilitando o aprendizado de programação através
 de uma sintaxe semelhante ao Portugol, mas com recursos modernos de linguagens orientadas a objetos.
 
 ## Características
@@ -18,7 +18,7 @@ de uma sintaxe semelhante ao Portugol, mas com recursos modernos de linguagens o
 - **Funções e métodos** com parâmetros e valores de retorno
 - **Funções nativas de E/S** para operações de entrada e saída
 - **Coleções** como listas e mapas
-- **Processamento de arquivos** com bibliotecas nativas C++
+- **Processamento de arquivos** com bibliotecas nativas _C++_
 - **Suporte a threads** para execução assíncrona
 - **Suporte a multiplos modulos** import de outros arquivos
 
@@ -31,7 +31,8 @@ de uma sintaxe semelhante ao Portugol, mas com recursos modernos de linguagens o
 ## Documentação
 
 - **Documentação da Engine do Interpretador**: [P++ Docs](https://deepwiki.com/GustavoLyra23/PPlus)
-- **Site Oficial do P++**: [Web Page](https://gustavolyra23.github.io/pplus_web/index.html)
+- **Site Oficial do _P++_**: [Web Page](https://gustavolyra23.github.io/pplus_web/index.html)
+- **Extensão Vscode**: [_P++_ Vscode Extension](https://marketplace.visualstudio.com/items?itemName=gustavomirandalyra16.portugolpp)
 
 ## Instalação
 
