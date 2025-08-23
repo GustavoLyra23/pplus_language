@@ -4,6 +4,10 @@ project(portugolpp_cpp)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# Find required packages
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(ANTLR4 REQUIRED antlr4-runtime)
+
 # Include directories
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/cpp_src/include)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/cpp_src/antlr_generated/src/main/antlr/org/gustavolyra)
@@ -20,7 +24,7 @@ add_executable(portugolpp_cpp ${SOURCES})
 
 # Link libraries
 target_link_libraries(portugolpp_cpp
-    /usr/local/lib/libantlr4-runtime.so
+    antlr4-runtime
 )
 
 # Set output directory

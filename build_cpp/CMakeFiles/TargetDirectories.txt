@@ -1,0 +1,7 @@
+/home/runner/work/pplus_language/pplus_language/build_cpp/CMakeFiles/portugolpp_cpp.dir
+/home/runner/work/pplus_language/pplus_language/build_cpp/CMakeFiles/edit_cache.dir
+/home/runner/work/pplus_language/pplus_language/build_cpp/CMakeFiles/rebuild_cache.dir
+/home/runner/work/pplus_language/pplus_language/build_cpp/CMakeFiles/list_install_components.dir
+/home/runner/work/pplus_language/pplus_language/build_cpp/CMakeFiles/install.dir
+/home/runner/work/pplus_language/pplus_language/build_cpp/CMakeFiles/install/local.dir
+/home/runner/work/pplus_language/pplus_language/build_cpp/CMakeFiles/install/strip.dir
