@@ -33,16 +33,20 @@ std::any Interpretador::visitPrograma(PortugolPPParser::ProgramaContext *ctx) {
 }
 
 std::any Interpretador::visitExpressao(PortugolPPParser::ExpressaoContext *ctx) {
-    return visit(ctx->atribuicao());
+    auto resultado = visit(ctx->atribuicao());
+    return resultado;
 }
 
 std::any Interpretador::visitPrimario(PortugolPPParser::PrimarioContext *ctx) {
+    
     if (ctx->NUMERO()) {
         std::string numStr = ctx->NUMERO()->getText();
         if (numStr.find('.') != std::string::npos) {
-            return std::make_shared<ValorReal>(std::stod(numStr));
+            auto valor = std::make_shared<ValorReal>(std::stod(numStr));
+            return std::static_pointer_cast<Valor>(valor);
         } else {
-            return std::make_shared<ValorInteiro>(std::stoi(numStr));
+            auto valor = std::make_shared<ValorInteiro>(std::stoi(numStr));
+            return std::static_pointer_cast<Valor>(valor);
         }
     }
     
@@ -50,15 +54,18 @@ std::any Interpretador::visitPrimario(PortugolPPParser::PrimarioContext *ctx) {
         std::string texto = ctx->TEXTO_LITERAL()->getText();
         // Remove quotes
         texto = texto.substr(1, texto.length() - 2);
-        return std::make_shared<ValorTexto>(texto);
+        auto valor = std::make_shared<ValorTexto>(texto);
+        return std::static_pointer_cast<Valor>(valor);
     }
     
     if (ctx->getText() == "verdadeiro") {
-        return std::make_shared<ValorLogico>(true);
+        auto valor = std::make_shared<ValorLogico>(true);
+        return std::static_pointer_cast<Valor>(valor);
     }
     
     if (ctx->getText() == "falso") {
-        return std::make_shared<ValorLogico>(false);
+        auto valor = std::make_shared<ValorLogico>(false);
+        return std::static_pointer_cast<Valor>(valor);
     }
     
     if (ctx->ID()) {
@@ -84,10 +91,11 @@ std::any Interpretador::visitPrimario(PortugolPPParser::PrimarioContext *ctx) {
         return visit(ctx->expressao());
     }
     
-    return VALOR_NULO;
+    return std::static_pointer_cast<Valor>(VALOR_NULO);
 }
 
 std::any Interpretador::visitAtribuicao(PortugolPPParser::AtribuicaoContext *ctx) {
+    
     if (ctx->logicaOu()) {
         return visit(ctx->logicaOu());
     }
@@ -99,7 +107,7 @@ std::any Interpretador::visitAtribuicao(PortugolPPParser::AtribuicaoContext *ctx
         return valor;
     }
     
-    return VALOR_NULO;
+    return std::static_pointer_cast<Valor>(VALOR_NULO);
 }
 
 std::any Interpretador::visitDeclaracaoVar(PortugolPPParser::DeclaracaoVarContext *ctx) {
@@ -118,6 +126,44 @@ std::any Interpretador::visitDeclaracaoFuncao(PortugolPPParser::DeclaracaoFuncao
     std::string nome = ctx->ID()->getText();
     auto funcao = std::make_shared<ValorFuncao>(nome, ctx);
     global->definir(nome, funcao);
+    return VALOR_NULO;
+}
+
+std::any Interpretador::visitDeclaracao(PortugolPPParser::DeclaracaoContext *ctx) {
+    if (ctx->declaracaoVar()) {
+        return visit(ctx->declaracaoVar());
+    }
+    if (ctx->declaracaoFuncao()) {
+        return visit(ctx->declaracaoFuncao());
+    }
+    if (ctx->chamadaFuncao()) {
+        return visit(ctx->chamadaFuncao());
+    }
+    if (ctx->expressao()) {
+        return visit(ctx->expressao());
+    }
+    if (ctx->bloco()) {
+        return visit(ctx->bloco());
+    }
+    if (ctx->declaracaoClasse()) {
+        return visit(ctx->declaracaoClasse());
+    }
+    if (ctx->declaracaoInterface()) {
+        return visit(ctx->declaracaoInterface());
+    }
+    if (ctx->declaracaoSe()) {
+        return visit(ctx->declaracaoSe());
+    }
+    if (ctx->declaracaoEnquanto()) {
+        return visit(ctx->declaracaoEnquanto());
+    }
+    if (ctx->declaracaoPara()) {
+        return visit(ctx->declaracaoPara());
+    }
+    if (ctx->declaracaoReturn()) {
+        return visit(ctx->declaracaoReturn());
+    }
+    
     return VALOR_NULO;
 }
 
@@ -196,7 +242,33 @@ std::any Interpretador::visitMultiplicacao(PortugolPPParser::MultiplicacaoContex
 }
 
 std::any Interpretador::visitUnario(PortugolPPParser::UnarioContext *ctx) {
-    return visit(ctx->chamada());
+    if (ctx->unario()) {
+        // This is a unary operation like -x or !x
+        auto operando = std::any_cast<std::shared_ptr<Valor>>(visit(ctx->unario()));
+        std::string operador = ctx->children[0]->getText();
+        
+        if (operador == "-") {
+            if (operando->getType() == Valor::Type::INTEIRO) {
+                auto num = asInteiro(operando);
+                return std::make_shared<ValorInteiro>(-num->getValue());
+            } else if (operando->getType() == Valor::Type::REAL) {
+                auto num = asReal(operando);
+                return std::make_shared<ValorReal>(-num->getValue());
+            }
+        } else if (operador == "!") {
+            if (operando->getType() == Valor::Type::LOGICO) {
+                auto logico = asLogico(operando);
+                return std::make_shared<ValorLogico>(!logico->getValue());
+            }
+        }
+        return operando;
+    } else {
+        return visit(ctx->chamada());
+    }
+}
+
+std::any Interpretador::visitChamada(PortugolPPParser::ChamadaContext *ctx) {
+    return visit(ctx->primario());
 }
 
 std::shared_ptr<Valor> Interpretador::chamadaFuncao(const std::string& nome, const std::vector<std::shared_ptr<Valor>>& argumentos) {
@@ -211,7 +283,39 @@ std::shared_ptr<Valor> Interpretador::chamadaFuncao(const std::string& nome, con
         return funcao->getMetodoCallback()(argumentos);
     }
     
-    // For user-defined functions, we would need more complex implementation
+    // For user-defined functions
+    if (funcao->getDeclaracao()) {
+        auto ctx = static_cast<PortugolPPParser::DeclaracaoFuncaoContext*>(funcao->getDeclaracao());
+        
+        // Create new environment for function scope
+        auto funcaoAmbiente = std::make_shared<Ambiente>(global);
+        
+        // Set function parameters
+        if (ctx->listaParams()) {
+            auto params = ctx->listaParams()->param();
+            for (size_t i = 0; i < params.size() && i < argumentos.size(); i++) {
+                std::string paramNome = params[i]->ID()->getText();
+                funcaoAmbiente->definir(paramNome, argumentos[i]);
+            }
+        }
+        
+        // Save current environment and switch to function environment
+        auto oldAmbiente = ambiente;
+        ambiente = funcaoAmbiente;
+        
+        try {
+            visit(ctx->bloco());
+            ambiente = oldAmbiente;
+            return VALOR_NULO;
+        } catch (const RetornoException& retorno) {
+            ambiente = oldAmbiente;
+            return retorno.valor;
+        } catch (...) {
+            ambiente = oldAmbiente;
+            throw;
+        }
+    }
+    
     return VALOR_NULO;
 }
 
@@ -222,7 +326,6 @@ void Interpretador::setupFuncoesNativas() {
             for (const auto& arg : args) {
                 std::cout << arg->toString() << " ";
             }
-            std::cout << std::endl;
             return VALOR_NULO;
         });
     global->definir("escrever", escrever);
@@ -232,7 +335,6 @@ void Interpretador::setupFuncoesNativas() {
             for (const auto& arg : args) {
                 std::cout << arg->toString() << " ";
             }
-            std::cout << std::endl;
             return VALOR_NULO;
         });
     global->definir("imprimir", imprimir);
@@ -274,13 +376,47 @@ void Interpretador::visitFuncaoMain() {
 }
 
 // Stub implementations for other methods
-std::any Interpretador::visitChamadaFuncao(PortugolPPParser::ChamadaFuncaoContext *ctx) { return VALOR_NULO; }
+std::any Interpretador::visitChamadaFuncao(PortugolPPParser::ChamadaFuncaoContext *ctx) { 
+    try {
+        std::string nome = ctx->ID()->getText();
+        std::vector<std::shared_ptr<Valor>> argumentos;
+        
+        if (ctx->argumentos()) {
+            for (auto expr : ctx->argumentos()->expressao()) {
+                auto valor = std::any_cast<std::shared_ptr<Valor>>(visit(expr));
+                argumentos.push_back(valor);
+            }
+        }
+        
+        auto resultado = chamadaFuncao(nome, argumentos);
+        return resultado;
+    } catch (const std::bad_any_cast& e) {
+        return VALOR_NULO;
+    } catch (const std::exception& e) {
+        return VALOR_NULO;
+    }
+}
 std::any Interpretador::visitDeclaracaoClasse(PortugolPPParser::DeclaracaoClasseContext *ctx) { return VALOR_NULO; }
 std::any Interpretador::visitDeclaracaoInterface(PortugolPPParser::DeclaracaoInterfaceContext *ctx) { return VALOR_NULO; }
-std::any Interpretador::visitLogicaOu(PortugolPPParser::LogicaOuContext *ctx) { return VALOR_NULO; }
-std::any Interpretador::visitLogicaE(PortugolPPParser::LogicaEContext *ctx) { return VALOR_NULO; }
-std::any Interpretador::visitIgualdade(PortugolPPParser::IgualdadeContext *ctx) { return VALOR_NULO; }
-std::any Interpretador::visitComparacao(PortugolPPParser::ComparacaoContext *ctx) { return VALOR_NULO; }
+std::any Interpretador::visitLogicaOu(PortugolPPParser::LogicaOuContext *ctx) { 
+    // For now, just visit the first logicaE
+    return visit(ctx->logicaE(0));
+}
+
+std::any Interpretador::visitLogicaE(PortugolPPParser::LogicaEContext *ctx) { 
+    // For now, just visit the first igualdade
+    return visit(ctx->igualdade(0));
+}
+
+std::any Interpretador::visitIgualdade(PortugolPPParser::IgualdadeContext *ctx) { 
+    // For now, just visit the first comparacao
+    return visit(ctx->comparacao(0));
+}
+
+std::any Interpretador::visitComparacao(PortugolPPParser::ComparacaoContext *ctx) { 
+    // For now, just visit the first adicao
+    return visit(ctx->adicao(0));
+}
 std::any Interpretador::visitDeclaracaoSe(PortugolPPParser::DeclaracaoSeContext *ctx) { return VALOR_NULO; }
 std::any Interpretador::visitDeclaracaoEnquanto(PortugolPPParser::DeclaracaoEnquantoContext *ctx) { return VALOR_NULO; }
 std::any Interpretador::visitDeclaracaoPara(PortugolPPParser::DeclaracaoParaContext *ctx) { return VALOR_NULO; }

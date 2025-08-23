@@ -24,9 +24,16 @@ de uma sintaxe semelhante ao Portugol, mas com recursos modernos de linguagens o
 
 ## Requisitos do Sistema
 
+### Versão Java/Kotlin (original)
 - Java JDK 21 ou superior
 - Gradle 8.0 ou superior
 - CMake (para compilação das bibliotecas nativas)
+
+### Versão C++ (nova implementação)
+- C++17 ou superior
+- CMake 3.16 ou superior
+- ANTLR4 C++ runtime
+- GCC/Clang ou MSVC
 
 ## Documentação
 
@@ -40,10 +47,47 @@ de uma sintaxe semelhante ao Portugol, mas com recursos modernos de linguagens o
 
 ```bash
 git clone <url-do-repositorio>
-cd pplus
+cd pplus_language
 ``` 
 
 ## Compilar o projeto
+
+### Versão C++ (recomendada)
+
+#### Pré-requisitos
+```bash
+# Ubuntu/Debian
+sudo apt update
+sudo apt install -y cmake build-essential wget unzip pkg-config uuid-dev
+
+# Download e instalar ANTLR4 C++ runtime
+wget https://github.com/antlr/antlr4/archive/refs/tags/4.13.1.tar.gz
+tar xzf 4.13.1.tar.gz
+cd antlr4-4.13.1/runtime/Cpp
+mkdir build && cd build
+cmake .. -DCMAKE_BUILD_TYPE=Release
+make -j4
+sudo make install
+cd ../../../../
+```
+
+#### Compilar o interpretador C++
+```bash
+# Gerar parser C++ do ANTLR
+java -jar antlr-4.13.1-complete.jar -Dlanguage=Cpp -visitor -o cpp_src/antlr_generated src/main/antlr/org/gustavolyra/PortugolPP.g4
+
+# Compilar projeto
+mkdir build_cpp && cd build_cpp
+cmake ..
+make -j4
+```
+
+#### Executar programa P++
+```bash
+./bin/portugolpp_cpp programa.ppp
+```
+
+### Versão Java/Kotlin (original)
 
 #### Compilar bibliotecas nativas
 

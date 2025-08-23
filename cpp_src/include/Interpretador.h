@@ -21,6 +21,7 @@ public:
     
     // Main visitor methods
     std::any visitPrograma(PortugolPPParser::ProgramaContext *ctx) override;
+    std::any visitDeclaracao(PortugolPPParser::DeclaracaoContext *ctx) override;
     std::any visitExpressao(PortugolPPParser::ExpressaoContext *ctx) override;
     std::any visitPrimario(PortugolPPParser::PrimarioContext *ctx) override;
     std::any visitAtribuicao(PortugolPPParser::AtribuicaoContext *ctx) override;
@@ -35,6 +36,7 @@ public:
     std::any visitAdicao(PortugolPPParser::AdicaoContext *ctx) override;
     std::any visitMultiplicacao(PortugolPPParser::MultiplicacaoContext *ctx) override;
     std::any visitUnario(PortugolPPParser::UnarioContext *ctx) override;
+    std::any visitChamada(PortugolPPParser::ChamadaContext *ctx) override;
     
     // Logical operations
     std::any visitLogicaOu(PortugolPPParser::LogicaOuContext *ctx) override;

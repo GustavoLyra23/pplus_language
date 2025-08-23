@@ -1,0 +1,38 @@
+# Build directories
+build/
+build_cpp/
+bin/
+lib/
+
+# CMake files
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+
+# Generated files
+*.o
+*.so
+*.dll
+*.exe
+*.jar
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Gradle files
+.gradle/
+gradlew.bat
+
+# Temporary files
+/tmp/
+
+# ANTLR generated files (optional - keeping for now)
+# cpp_src/antlr_generated/
+
+# OS specific
+.DS_Store
+Thumbs.db

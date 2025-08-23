@@ -1,0 +1,25 @@
+funcao main() {
+    escrever("=== Teste Básico do P++ em C++ ===");
+    
+    // Teste de variáveis
+    var nome = "P++";
+    var versao = 2.0;
+    var ativo = verdadeiro;
+    
+    escrever("Linguagem:", nome);
+    escrever("Versão:", versao);
+    escrever("Ativo:", ativo);
+    
+    // Teste de aritmética
+    var a = 10;
+    var b = 5;
+    escrever("Soma:", a + b);
+    escrever("Subtração:", a - b);
+    escrever("Multiplicação:", a * b);
+    
+    // Teste de texto
+    var saudacao = "Olá " + nome + "!";
+    escrever(saudacao);
+    
+    escrever("=== Teste concluído ===");
+}

@@ -4006,6 +4006,64 @@ CMakeFiles/portugolpp_cpp.dir/cpp_src/src/main.cpp.o: /home/runner/work/pplus_la
   /usr/local/include/antlr4-runtime/tree/xpath/XPathWildcardAnywhereElement.h \
   /usr/local/include/antlr4-runtime/tree/xpath/XPathWildcardElement.h
 
+bin/portugolpp_cpp: /lib/x86_64-linux-gnu/libc.so.6 \
+  /lib/x86_64-linux-gnu/libm.so.6 \
+  /lib/x86_64-linux-gnu/libmvec.so.1 \
+  /lib64/ld-linux-x86-64.so.2 \
+  /usr/lib/x86_64-linux-gnu/Scrt1.o \
+  /usr/lib/x86_64-linux-gnu/crti.o \
+  /usr/lib/x86_64-linux-gnu/crtn.o \
+  /usr/lib/x86_64-linux-gnu/libc.so \
+  /usr/lib/x86_64-linux-gnu/libgcc_s.so.1 \
+  /usr/lib/x86_64-linux-gnu/libm.so \
+  /usr/lib/gcc/x86_64-linux-gnu/13/crtbeginS.o \
+  /usr/lib/gcc/x86_64-linux-gnu/13/crtendS.o \
+  /usr/lib/gcc/x86_64-linux-gnu/13/libgcc.a \
+  /usr/lib/gcc/x86_64-linux-gnu/13/libgcc_s.so \
+  /usr/lib/gcc/x86_64-linux-gnu/13/libstdc++.so \
+  /usr/lib/x86_64-linux-gnu/libc_nonshared.a \
+  /usr/local/lib/libantlr4-runtime.so \
+  CMakeFiles/portugolpp_cpp.dir/cpp_src/antlr_generated/src/main/antlr/org/gustavolyra/PortugolPPBaseListener.cpp.o \
+  CMakeFiles/portugolpp_cpp.dir/cpp_src/antlr_generated/src/main/antlr/org/gustavolyra/PortugolPPBaseVisitor.cpp.o \
+  CMakeFiles/portugolpp_cpp.dir/cpp_src/antlr_generated/src/main/antlr/org/gustavolyra/PortugolPPLexer.cpp.o \
+  CMakeFiles/portugolpp_cpp.dir/cpp_src/antlr_generated/src/main/antlr/org/gustavolyra/PortugolPPListener.cpp.o \
+  CMakeFiles/portugolpp_cpp.dir/cpp_src/antlr_generated/src/main/antlr/org/gustavolyra/PortugolPPParser.cpp.o \
+  CMakeFiles/portugolpp_cpp.dir/cpp_src/antlr_generated/src/main/antlr/org/gustavolyra/PortugolPPVisitor.cpp.o \
+  CMakeFiles/portugolpp_cpp.dir/cpp_src/src/Ambiente.cpp.o \
+  CMakeFiles/portugolpp_cpp.dir/cpp_src/src/Interpretador.cpp.o \
+  CMakeFiles/portugolpp_cpp.dir/cpp_src/src/Valor.cpp.o \
+  CMakeFiles/portugolpp_cpp.dir/cpp_src/src/main.cpp.o
+
+
+CMakeFiles/portugolpp_cpp.dir/cpp_src/src/Valor.cpp.o:
+
+CMakeFiles/portugolpp_cpp.dir/cpp_src/src/Interpretador.cpp.o:
+
+CMakeFiles/portugolpp_cpp.dir/cpp_src/antlr_generated/src/main/antlr/org/gustavolyra/PortugolPPParser.cpp.o:
+
+CMakeFiles/portugolpp_cpp.dir/cpp_src/antlr_generated/src/main/antlr/org/gustavolyra/PortugolPPBaseVisitor.cpp.o:
+
+CMakeFiles/portugolpp_cpp.dir/cpp_src/antlr_generated/src/main/antlr/org/gustavolyra/PortugolPPBaseListener.cpp.o:
+
+/usr/local/lib/libantlr4-runtime.so:
+
+/usr/lib/gcc/x86_64-linux-gnu/13/libstdc++.so:
+
+/usr/lib/gcc/x86_64-linux-gnu/13/crtendS.o:
+
+CMakeFiles/portugolpp_cpp.dir/cpp_src/antlr_generated/src/main/antlr/org/gustavolyra/PortugolPPLexer.cpp.o:
+
+/usr/lib/x86_64-linux-gnu/crtn.o:
+
+/usr/lib/x86_64-linux-gnu/crti.o:
+
+/usr/lib/x86_64-linux-gnu/Scrt1.o:
+
+/lib64/ld-linux-x86-64.so.2:
+
+/lib/x86_64-linux-gnu/libmvec.so.1:
+
+/lib/x86_64-linux-gnu/libc.so.6:
 
 /home/runner/work/pplus_language/pplus_language/cpp_src/src/Valor.cpp:
 
@@ -4014,6 +4072,8 @@ CMakeFiles/portugolpp_cpp.dir/cpp_src/src/main.cpp.o: /home/runner/work/pplus_la
 /home/runner/work/pplus_language/pplus_language/cpp_src/src/Interpretador.cpp:
 
 /usr/include/c++/13/functional:
+
+/usr/lib/x86_64-linux-gnu/libc.so:
 
 /usr/include/c++/13/bits/std_function.h:
 
@@ -4161,6 +4221,8 @@ CMakeFiles/portugolpp_cpp.dir/cpp_src/src/main.cpp.o: /home/runner/work/pplus_la
 
 /usr/local/include/antlr4-runtime/atn/ActionTransition.h:
 
+/usr/lib/x86_64-linux-gnu/libm.so:
+
 /usr/local/include/antlr4-runtime/tree/xpath/XPathTokenElement.h:
 
 /usr/local/include/antlr4-runtime/atn/PlusLoopbackState.h:
@@ -4244,6 +4306,8 @@ CMakeFiles/portugolpp_cpp.dir/cpp_src/src/main.cpp.o: /home/runner/work/pplus_la
 /usr/include/c++/13/bits/cxxabi_init_exception.h:
 
 /usr/include/c++/13/bits/unordered_map.h:
+
+CMakeFiles/portugolpp_cpp.dir/cpp_src/src/main.cpp.o:
 
 /usr/include/c++/13/bits/unique_ptr.h:
 
@@ -4457,6 +4521,8 @@ CMakeFiles/portugolpp_cpp.dir/cpp_src/src/main.cpp.o: /home/runner/work/pplus_la
 
 /usr/include/x86_64-linux-gnu/bits/types/__fpos_t.h:
 
+CMakeFiles/portugolpp_cpp.dir/cpp_src/antlr_generated/src/main/antlr/org/gustavolyra/PortugolPPListener.cpp.o:
+
 /usr/local/include/antlr4-runtime/tree/ErrorNode.h:
 
 /usr/include/c++/13/system_error:
@@ -4497,6 +4563,8 @@ CMakeFiles/portugolpp_cpp.dir/cpp_src/src/main.cpp.o: /home/runner/work/pplus_la
 
 /usr/include/c++/13/bits/erase_if.h:
 
+/usr/lib/gcc/x86_64-linux-gnu/13/crtbeginS.o:
+
 /usr/include/c++/13/bits/ios_base.h:
 
 /usr/include/x86_64-linux-gnu/bits/types/struct_timespec.h:
@@ -4510,6 +4578,8 @@ CMakeFiles/portugolpp_cpp.dir/cpp_src/src/main.cpp.o: /home/runner/work/pplus_la
 /usr/include/x86_64-linux-gnu/bits/stdint-uintn.h:
 
 /usr/include/c++/13/bits/locale_facets.h:
+
+/usr/lib/x86_64-linux-gnu/libc_nonshared.a:
 
 /usr/include/x86_64-linux-gnu/asm/errno.h:
 
@@ -4535,6 +4605,8 @@ CMakeFiles/portugolpp_cpp.dir/cpp_src/src/main.cpp.o: /home/runner/work/pplus_la
 
 /usr/include/c++/13/bits/memory_resource.h:
 
+/usr/lib/gcc/x86_64-linux-gnu/13/libgcc.a:
+
 /usr/include/c++/13/bits/memoryfwd.h:
 
 /usr/local/include/antlr4-runtime/support/Declarations.h:
@@ -4556,6 +4628,8 @@ CMakeFiles/portugolpp_cpp.dir/cpp_src/src/main.cpp.o: /home/runner/work/pplus_la
 /usr/local/include/antlr4-runtime/tree/AbstractParseTreeVisitor.h:
 
 /usr/include/c++/13/bits/stl_iterator_base_funcs.h:
+
+CMakeFiles/portugolpp_cpp.dir/cpp_src/src/Ambiente.cpp.o:
 
 /usr/include/c++/13/bits/node_handle.h:
 
@@ -4683,6 +4757,8 @@ CMakeFiles/portugolpp_cpp.dir/cpp_src/src/main.cpp.o: /home/runner/work/pplus_la
 
 /usr/include/x86_64-linux-gnu/bits/endian.h:
 
+/usr/lib/x86_64-linux-gnu/libgcc_s.so.1:
+
 /usr/include/x86_64-linux-gnu/bits/errno.h:
 
 /usr/include/x86_64-linux-gnu/bits/types/struct_sched_param.h:
@@ -4709,6 +4785,8 @@ CMakeFiles/portugolpp_cpp.dir/cpp_src/src/main.cpp.o: /home/runner/work/pplus_la
 
 /usr/include/x86_64-linux-gnu/bits/long-double.h:
 
+CMakeFiles/portugolpp_cpp.dir/cpp_src/antlr_generated/src/main/antlr/org/gustavolyra/PortugolPPVisitor.cpp.o:
+
 /usr/include/x86_64-linux-gnu/bits/stdio_lim.h:
 
 /usr/include/c++/13/bits/stl_vector.h:
@@ -4732,6 +4810,8 @@ CMakeFiles/portugolpp_cpp.dir/cpp_src/src/main.cpp.o: /home/runner/work/pplus_la
 /usr/include/c++/13/any:
 
 /usr/include/x86_64-linux-gnu/bits/thread-shared-types.h:
+
+/lib/x86_64-linux-gnu/libm.so.6:
 
 /usr/include/x86_64-linux-gnu/bits/time.h:
 
@@ -4906,6 +4986,8 @@ CMakeFiles/portugolpp_cpp.dir/cpp_src/src/main.cpp.o: /home/runner/work/pplus_la
 /usr/include/c++/13/iostream:
 
 /usr/local/include/antlr4-runtime/ListTokenSource.h:
+
+/usr/lib/gcc/x86_64-linux-gnu/13/libgcc_s.so:
 
 /usr/local/include/antlr4-runtime/Parser.h:
 
