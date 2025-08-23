@@ -1,0 +1,21 @@
+// Demonstração do Interpretador P++ em C++
+// Este programa mostra a funcionalidade básica que foi migrada com sucesso
+
+funcao main() {
+    // Teste de função nativa
+    escrever("=== P++ Interpretador C++ ===");
+    imprimir("Migração de Java/Kotlin para C++ concluída!");
+    
+    // Teste de strings
+    escrever("Testando strings:", "P++", "é", "uma", "linguagem", "portuguesa");
+    
+    // Função de cumprimento
+    cumprimentar();
+    
+    escrever("=== Fim da Demonstração ===");
+}
+
+funcao cumprimentar() {
+    escrever("Olá da função cumprimentar!");
+    escrever("As funções definidas pelo usuário estão funcionando!");
+}

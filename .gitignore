@@ -1,3 +1,4 @@
+# Java/Gradle build
 .gradle
 build/
 !gradle/wrapper/gradle-wrapper.jar
@@ -5,7 +6,18 @@ build/
 !**/src/test/**/build/
 src/main/antlr/org/gustavolyra/.antlr
 
-### IntelliJ IDEA ###
+# C++ build
+build_cpp/
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+*.o
+*.so
+*.dll
+*.exe
+
+# IDE files
 .idea/modules.xml
 .idea/jarRepositories.xml
 .idea/compiler.xml
@@ -16,11 +28,10 @@ src/main/antlr/org/gustavolyra/.antlr
 out/
 !**/src/main/**/out/
 !**/src/test/**/out/
+.vscode/
 
-### Kotlin ###
+# Language specific
 .kotlin
-
-### Eclipse ###
 .apt_generated
 .classpath
 .factorypath
@@ -32,15 +43,16 @@ bin/
 !**/src/main/**/bin/
 !**/src/test/**/bin/
 
-### NetBeans ###
+# NetBeans
 /nbproject/private/
 /nbbuild/
 /dist/
 /nbdist/
 /.nb-gradle/
 
-### VS Code ###
-.vscode/
-
-### Mac OS ###
+# OS specific
 .DS_Store
+Thumbs.db
+
+# Temporary files
+antlr-4.13.1-complete.jar

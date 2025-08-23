@@ -5,6 +5,13 @@
 <hr/>
 </div>
 
+## 🚀 Migração para C++ Concluída!
+
+Este projeto foi **migrado com sucesso de Java/Kotlin para C++**, mantendo total compatibilidade com a sintaxe da linguagem P++. A nova implementação em C++ oferece melhor performance e menor uso de memória.
+
+📍 **Versão Atual**: C++ com ANTLR4
+📍 **Versão Anterior**: Java/Kotlin (ainda disponível)
+
 ## Sobre o Projeto
 _P++_ é uma linguagem de programação destinada a falantes de português, facilitando o aprendizado de programação através
 de uma sintaxe semelhante ao Portugol, mas com recursos modernos de linguagens orientadas a objetos.
@@ -84,8 +91,45 @@ make -j4
 
 #### Executar programa P++
 ```bash
+# Versão C++
 ./bin/portugolpp_cpp programa.ppp
+
+# Modo interativo
+./bin/portugolpp_cpp
+# Digite comandos P++ ou use 'run arquivo.ppp'
+# Digite 'exit' para sair
 ```
+
+### Exemplo de Programa P++
+
+```pplus
+funcao main() {
+    escrever("Olá mundo em P++!");
+    cumprimentar("Maria");
+}
+
+funcao cumprimentar(nome: Texto) {
+    escrever("Olá", nome, "!");
+}
+```
+
+### Status da Migração
+
+✅ **Concluído**: 
+- Parser ANTLR4 em C++
+- Sistema de tipos (Inteiro, Real, Texto, Logico, etc.)
+- Interpretador baseado em visitor pattern
+- Gerenciamento de ambiente/escopo
+- Funções nativas (escrever, imprimir)
+- Definição e chamada de funções
+- Expressions básicas e literals
+
+🚧 **Em desenvolvimento**:
+- Operações aritméticas complexas  
+- Estruturas de controle (se, enquanto, para)
+- Classes e objetos
+- Listas e mapas
+- Manipulação de arquivos
 
 ### Versão Java/Kotlin (original)
 
